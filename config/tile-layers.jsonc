@@ -1,0 +1,169 @@
+// Which of a worldgen prefab's four layers each tile belongs to, and how hard
+// it fights for the slot.
+//
+// A prefab square has exactly four slots — Floor, FloorFurniture, FloorOverlay,
+// Furniture — while a real Project Zomboid building square carries up to twelve
+// tiles. Extraction therefore has to discard most of them. `priority` decides
+// what survives when two tiles want the same slot: higher wins.
+//
+// The guiding rule is that **structure beats decoration**. Losing a grime
+// overlay costs nothing; losing a wall leaves a hole a survivor walks through.
+//
+// Rules are tried in order and the first match wins, so put the specific ones
+// first. Patterns are JavaScript regular expressions tested against the full
+// tile name (e.g. "walls_interior_house_01_3").
+{
+  "rules": [
+    // ---- Floor -----------------------------------------------------------
+    // Ground and interior floors. Always slot 0 in the source data.
+    {
+      "match": "^floors_(interior|exterior)_",
+      "layer": "Floor",
+      "priority": 100,
+      "note": "interior and exterior floor plates"
+    },
+    {
+      "match": "^blends_(natural|grassoverlays|street)_",
+      "layer": "Floor",
+      "priority": 90,
+      "note": "terrain and street ground blends"
+    },
+    {
+      "match": "^floors_",
+      "layer": "Floor",
+      "priority": 80
+    },
+    {
+      "match": "^location_.*_floor",
+      "layer": "Floor",
+      "priority": 70
+    },
+
+    // ---- Furniture -------------------------------------------------------
+    // Walls first: they define the building and must never lose a slot.
+    {
+      "match": "^walls_",
+      "layer": "Furniture",
+      "priority": 100,
+      "note": "exterior and interior walls, including window and door frames"
+    },
+    {
+      "match": "^fixtures_doors",
+      "layer": "Furniture",
+      "priority": 95,
+      "note": "a sealed building is unenterable, so doors rank just under walls"
+    },
+    {
+      "match": "^fixtures_windows",
+      "layer": "Furniture",
+      "priority": 90
+    },
+    {
+      "match": "^fixtures_stairs",
+      "layer": "Furniture",
+      "priority": 88,
+      "note": "kept even though prefabs are single-storey, so the footprint reads right"
+    },
+    {
+      "match": "^fixtures_counters",
+      "layer": "Furniture",
+      "priority": 70,
+      "note": "counters carry loot containers, so they matter more than seating"
+    },
+    {
+      "match": "^appliances_",
+      "layer": "Furniture",
+      "priority": 68,
+      "note": "fridges and stoves are containers"
+    },
+    {
+      "match": "^furniture_shelving",
+      "layer": "Furniture",
+      "priority": 66,
+      "note": "shelves are containers — this is where shop loot lives"
+    },
+    {
+      "match": "^furniture_storage",
+      "layer": "Furniture",
+      "priority": 65
+    },
+    {
+      "match": "^furniture_",
+      "layer": "Furniture",
+      "priority": 50
+    },
+    {
+      "match": "^fixtures_railings",
+      "layer": "Furniture",
+      "priority": 45
+    },
+    {
+      "match": "^lighting_",
+      "layer": "Furniture",
+      "priority": 20,
+      "note": "decorative; loses to anything structural on the same square"
+    },
+    {
+      "match": "^(trees|vegetation_trees)_",
+      "layer": "Furniture",
+      "priority": 40
+    },
+
+    // ---- FloorFurniture --------------------------------------------------
+    // Things that sit on the ground and are walked over.
+    {
+      "match": "^floors_rugs",
+      "layer": "FloorFurniture",
+      "priority": 60
+    },
+    {
+      "match": "^street_curbs",
+      "layer": "FloorFurniture",
+      "priority": 80,
+      "note": "the vanilla highway prefab puts kerbs here, not in FloorOverlay"
+    },
+    {
+      "match": "^vegetation_groundcover",
+      "layer": "FloorFurniture",
+      "priority": 30
+    },
+
+    // ---- FloorOverlay ----------------------------------------------------
+    // Painted-on detail. First to be dropped.
+    {
+      "match": "^street_trafficlines",
+      "layer": "FloorOverlay",
+      "priority": 70,
+      "note": "road markings; the vanilla highway prefab puts them here"
+    },
+    {
+      "match": "^overlay_grime_floor",
+      "layer": "FloorOverlay",
+      "priority": 20
+    },
+    {
+      "match": "^overlay_grime_wall",
+      "layer": "FloorOverlay",
+      "priority": 10,
+      "note": "wall grime cannot be drawn without its wall; lowest value of all"
+    },
+    {
+      "match": "^overlay_",
+      "layer": "FloorOverlay",
+      "priority": 15
+    },
+    {
+      "match": "^d_(streetcracks|generic)",
+      "layer": "FloorOverlay",
+      "priority": 25
+    }
+  ],
+
+  // Anything unmatched is treated as an object rather than ground, because a
+  // misplaced object is visible and fixable while a misplaced floor silently
+  // replaces the ground the player stands on.
+  "fallback": {
+    "layer": "Furniture",
+    "priority": 10
+  }
+}

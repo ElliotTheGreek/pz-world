@@ -1,0 +1,142 @@
+// Road classes: how wide, what they are made of, and what edges them.
+//
+// The structure follows Terrula's feature profile (config/features/default.yaml
+// in that project) because the problem is the same one: a source gives you a
+// centreline and a class, and a table has to turn that into ground. What is
+// different is the units — Terrula insists on metres because a sphere's cells
+// are not all the same size, whereas a Project Zomboid square is a square and
+// widths here are simply in squares.
+//
+// Tile names were taken from the vanilla `highway_NS_00` worldgen prefab and
+// from what Muldraugh's own cells actually use, so they are known to exist.
+{
+  // Bands measured outward from the carriageway edge, in squares.
+  "bands": {
+    "kerb": 1,
+    "sidewalk": 2,
+    "verge": 1
+  },
+
+  // Sidewalks are not drawn along every rural lane. A road only gets one where
+  // the surroundings are built up — the same gate Terrula applies, for the same
+  // reason: the character of the ground beside a road follows the place, not
+  // the road's class alone.
+  "sidewalkClasses": ["motorway", "trunk", "primary", "secondary", "residential", "service"],
+
+  // `highway=*` to a class and a carriageway width in squares (both
+  // directions). OSM has lane counts often enough to be worth using, and
+  // `widthPerLane` is applied when `lanes` is present.
+  "highway": {
+    "motorway":       { "class": "motorway",    "width": 14 },
+    "motorway_link":  { "class": "motorway",    "width": 7 },
+    "trunk":          { "class": "trunk",       "width": 12 },
+    "trunk_link":     { "class": "trunk",       "width": 7 },
+    "primary":        { "class": "primary",     "width": 11 },
+    "primary_link":   { "class": "primary",     "width": 7 },
+    "secondary":      { "class": "secondary",   "width": 9 },
+    "secondary_link": { "class": "secondary",   "width": 7 },
+    "tertiary":       { "class": "secondary",   "width": 8 },
+    "residential":    { "class": "residential", "width": 7 },
+    "unclassified":   { "class": "residential", "width": 6 },
+    "living_street":  { "class": "residential", "width": 6 },
+    "service":        { "class": "service",     "width": 4 },
+    "track":          { "class": "track",       "width": 3 },
+    "footway":        { "class": "footway",     "width": 2 },
+    "path":           { "class": "footway",     "width": 2 },
+    "pedestrian":     { "class": "footway",     "width": 3 },
+    "cycleway":       { "class": "cycleway",    "width": 2 },
+    "steps":          { "class": "footway",     "width": 2 }
+  },
+
+  "widthPerLane": 3.5,
+
+  // Highway values that are not roads on the ground and must not be burned.
+  "ignore": ["proposed", "construction", "raceway", "bus_guideway", "escape"],
+
+  // Tiles per class. `surface` is the carriageway, `kerb` the edging,
+  // `sidewalk` the pavement, `verge` the strip beyond it.
+  //
+  // `kerbDiag` is what makes an angled street read as angled rather than as a
+  // staircase: where the stairstep runs 1:1, the diagonal kerb artwork is laid
+  // instead of the square one. Vanilla uses these in about one in six of the
+  // Muldraugh cells that have kerbs at all.
+  "tiles": {
+    "motorway": {
+      "surface": ["blends_street_01_86"],
+      "kerb": ["street_curbs_01_9", "street_curbs_01_11"],
+      "kerbDiag": ["street_curbs_01_diag_0", "street_curbs_01_diag_1"],
+      "marking": ["street_trafficlines_01_4", "street_trafficlines_01_16"],
+      "sidewalk": ["floors_exterior_tilesandstone_01_3"],
+      "verge": []
+    },
+    "trunk": {
+      "surface": ["blends_street_01_86"],
+      "kerb": ["street_curbs_01_9", "street_curbs_01_11"],
+      "kerbDiag": ["street_curbs_01_diag_0", "street_curbs_01_diag_1"],
+      "marking": ["street_trafficlines_01_4"],
+      "sidewalk": ["floors_exterior_tilesandstone_01_3"],
+      "verge": []
+    },
+    "primary": {
+      "surface": ["blends_street_01_86"],
+      "kerb": ["street_curbs_01_9", "street_curbs_01_11"],
+      "kerbDiag": ["street_curbs_01_diag_0", "street_curbs_01_diag_1"],
+      "marking": ["street_trafficlines_01_4"],
+      "sidewalk": ["floors_exterior_tilesandstone_01_3"],
+      "verge": []
+    },
+    "secondary": {
+      "surface": ["blends_street_01_86"],
+      "kerb": ["street_curbs_01_9", "street_curbs_01_11"],
+      "kerbDiag": ["street_curbs_01_diag_0", "street_curbs_01_diag_1"],
+      "marking": [],
+      "sidewalk": ["floors_exterior_tilesandstone_01_3"],
+      "verge": []
+    },
+    "residential": {
+      "surface": ["blends_street_01_86"],
+      "kerb": ["street_curbs_01_9", "street_curbs_01_11"],
+      "kerbDiag": ["street_curbs_01_diag_0", "street_curbs_01_diag_1"],
+      "marking": [],
+      "sidewalk": ["floors_exterior_tilesandstone_01_3"],
+      "verge": []
+    },
+    "service": {
+      "surface": ["blends_street_01_86"],
+      "kerb": [],
+      "kerbDiag": [],
+      "marking": [],
+      "sidewalk": [],
+      "verge": []
+    },
+    "track": {
+      "surface": ["blends_natural_01_64"],
+      "kerb": [],
+      "kerbDiag": [],
+      "marking": [],
+      "sidewalk": [],
+      "verge": []
+    },
+    "footway": {
+      "surface": ["floors_exterior_tilesandstone_01_3"],
+      "kerb": [],
+      "kerbDiag": [],
+      "marking": [],
+      "sidewalk": [],
+      "verge": []
+    },
+    "cycleway": {
+      "surface": ["blends_street_01_86"],
+      "kerb": [],
+      "kerbDiag": [],
+      "marking": [],
+      "sidewalk": [],
+      "verge": []
+    }
+  },
+
+  // A stairstep run is called diagonal when its step ratio is within this much
+  // of 1:1. Outside that band the square kerb artwork is used, because the
+  // diagonal sprites only line up on a true 45° run.
+  "diagonalTolerance": 0.35
+}

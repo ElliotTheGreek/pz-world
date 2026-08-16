@@ -1,16 +1,51 @@
+# Nothing here is hand-written. Everything ignored below is either regenerated
+# by a script in tools/, fetched from the network, or derived from the user's own
+# Project Zomboid installation — and the last of those must never be committed.
+
 node_modules/
 
-# Overpass responses and any other fetched source data.
-cache/
+# --------------------------------------------------------------- build output
+#
+# `mod/` is the assembled mod, and every byte of it is produced:
+#
+#   mod/common/media/maps/PZWorld/   tools/make-canvas.js   (4,096 blank cells, 135 MB)
+#   mod/42/mod.info                  tools/make-canvas.js
+#   mod/42/media/lua/{client,shared,server}/
+#                                    tools/build-mod.js, copied from mod-src/
+#   mod/42/media/lua/shared/PZWorld/Prototypes/
+#                                    tools/emit-prototypes.js (5.4 MB)
+#
+# The source of truth for the Lua is `mod-src/`, which *is* tracked. Rebuild the
+# rest with `npm run setup`.
+mod/
 
-# Generated mod folders.
+# Older per-city mod folders from `npm run world --out`.
 out/
 
-# Prefabs harvested from the user's own Project Zomboid install. These are
-# derived from The Indie Stone's shipped map data and must never be committed
-# or redistributed — see docs/DECISIONS.md D6.
-library/extracted/
+# ------------------------------------------------------- fetched and derived
+#
+# Overpass responses, cached by query so that re-running a build does not
+# re-ask a shared free service.
+cache/
 
-# Scratch
+# Building data read out of the player's own Project Zomboid install.
+#
+# `extracted/` holds actual tile data and `buildings.json` holds an index of
+# where each building sits in the shipped maps, with its room names. Both are
+# derived from The Indie Stone's files and neither may be committed or
+# redistributed — see docs/DECISIONS.md D6. Both are rebuilt by `npm run extract`
+# and are specific to the installed game version anyway.
+library/
+
+# ------------------------------------------------------------------- scratch
 *.log
+npm-debug.log*
 tmp/
+*.tmp
+
+# --------------------------------------------------------------- environment
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

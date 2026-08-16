@@ -1,0 +1,143 @@
+// OpenStreetMap tags to pz-world building classes.
+//
+// This is the table that makes "stores where stores go, hospitals where
+// hospitals go" work. OSM carries the semantics directly — `shop=supermarket`,
+// `amenity=hospital`, `building=house` — which is exactly why it was chosen
+// over the public-domain US stack Terrula uses. FEMA's USA Structures has only
+// eight occupancy classes and cannot tell a supermarket from a bar.
+//
+// The class names on the right must exist in config/building-classes.jsonc,
+// because that is the vocabulary the extracted prefab library is bucketed by.
+//
+// Rules are tried in order; the first match wins. So put the specific amenity
+// and shop tags before the generic `building=*` ones, or every hospital becomes
+// a generic "yes" building.
+{
+  "buildings": [
+    // ---- amenity: the strongest signal in OSM ---------------------------
+    { "tag": "amenity", "value": "hospital", "class": "medical" },
+    { "tag": "amenity", "value": "clinic", "class": "medical" },
+    { "tag": "amenity", "value": "doctors", "class": "medical" },
+    { "tag": "amenity", "value": "pharmacy", "class": "medical" },
+    { "tag": "amenity", "value": "police", "class": "police" },
+    { "tag": "amenity", "value": "fire_station", "class": "fire" },
+    { "tag": "amenity", "value": "school", "class": "education" },
+    { "tag": "amenity", "value": "college", "class": "education" },
+    { "tag": "amenity", "value": "university", "class": "education" },
+    { "tag": "amenity", "value": "kindergarten", "class": "education" },
+    { "tag": "amenity", "value": "library", "class": "education" },
+    { "tag": "amenity", "value": "place_of_worship", "class": "church" },
+    { "tag": "amenity", "value": "restaurant", "class": "restaurant" },
+    { "tag": "amenity", "value": "fast_food", "class": "restaurant" },
+    { "tag": "amenity", "value": "cafe", "class": "restaurant" },
+    { "tag": "amenity", "value": "bar", "class": "bar" },
+    { "tag": "amenity", "value": "pub", "class": "bar" },
+    { "tag": "amenity", "value": "nightclub", "class": "bar" },
+    { "tag": "amenity", "value": "fuel", "class": "gas_station" },
+    { "tag": "amenity", "value": "bank", "class": "office" },
+    { "tag": "amenity", "value": "townhall", "class": "civic" },
+    { "tag": "amenity", "value": "courthouse", "class": "civic" },
+    { "tag": "amenity", "value": "post_office", "class": "civic" },
+    { "tag": "amenity", "value": "prison", "class": "police" },
+
+    // ---- shop: any shop is retail unless it is a food shop --------------
+    { "tag": "shop", "value": "supermarket", "class": "grocery" },
+    { "tag": "shop", "value": "convenience", "class": "grocery" },
+    { "tag": "shop", "value": "grocery", "class": "grocery" },
+    { "tag": "shop", "value": "greengrocer", "class": "grocery" },
+    { "tag": "shop", "value": "butcher", "class": "grocery" },
+    { "tag": "shop", "value": "bakery", "class": "grocery" },
+    { "tag": "shop", "value": "doityourself", "class": "retail" },
+    { "tag": "shop", "value": "hardware", "class": "retail" },
+    { "tag": "shop", "value": "car_repair", "class": "garage" },
+    { "tag": "shop", "value": "car", "class": "garage" },
+    // Bare `shop=*` — anything with a shop tag at all is a shop.
+    { "tag": "shop", "value": "*", "class": "retail" },
+
+    // ---- office ---------------------------------------------------------
+    { "tag": "office", "value": "*", "class": "office" },
+
+    // ---- building: the fallback signal -----------------------------------
+    { "tag": "building", "value": "house", "class": "house" },
+    { "tag": "building", "value": "detached", "class": "house" },
+    { "tag": "building", "value": "semidetached_house", "class": "house" },
+    { "tag": "building", "value": "bungalow", "class": "house" },
+    { "tag": "building", "value": "terrace", "class": "house" },
+    { "tag": "building", "value": "residential", "class": "house" },
+    { "tag": "building", "value": "apartments", "class": "apartment" },
+    { "tag": "building", "value": "dormitory", "class": "apartment" },
+    { "tag": "building", "value": "hotel", "class": "apartment" },
+    { "tag": "building", "value": "commercial", "class": "office" },
+    { "tag": "building", "value": "office", "class": "office" },
+    { "tag": "building", "value": "retail", "class": "retail" },
+    { "tag": "building", "value": "supermarket", "class": "grocery" },
+    { "tag": "building", "value": "industrial", "class": "industrial" },
+    { "tag": "building", "value": "factory", "class": "industrial" },
+    { "tag": "building", "value": "warehouse", "class": "warehouse" },
+    { "tag": "building", "value": "garage", "class": "garage" },
+    { "tag": "building", "value": "garages", "class": "garage" },
+    { "tag": "building", "value": "carport", "class": "garage" },
+    { "tag": "building", "value": "shed", "class": "shed" },
+    { "tag": "building", "value": "hut", "class": "shed" },
+    { "tag": "building", "value": "roof", "class": "shed" },
+    { "tag": "building", "value": "barn", "class": "farm" },
+    { "tag": "building", "value": "farm", "class": "farm" },
+    { "tag": "building", "value": "farm_auxiliary", "class": "farm" },
+    { "tag": "building", "value": "stable", "class": "farm" },
+    { "tag": "building", "value": "greenhouse", "class": "farm" },
+    { "tag": "building", "value": "church", "class": "church" },
+    { "tag": "building", "value": "chapel", "class": "church" },
+    { "tag": "building", "value": "cathedral", "class": "church" },
+    { "tag": "building", "value": "school", "class": "education" },
+    { "tag": "building", "value": "university", "class": "education" },
+    { "tag": "building", "value": "hospital", "class": "medical" },
+    { "tag": "building", "value": "civic", "class": "civic" },
+    { "tag": "building", "value": "public", "class": "civic" }
+  ],
+
+  // `building=yes` carries no information at all and is extremely common, so
+  // those fall through to the area rules in config/building-classes.jsonc.
+  "fallback": null,
+
+  // OSM landuse and natural tags to a biome-map pixel. Most values come from
+  // media/lua/server/metazones/BiomeMapConfig.lua and are grey levels, not
+  // palette indices — see src/formats/png.js.
+  //
+  // 200 is pz-world's own. BiomeMapConfig has no value for "a car park", and a
+  // car park is not a kind of vegetation: it is paved and it is where the cars
+  // are. It used to share 254 with construction sites and quarries, which meant
+  // it could be neither. See PZWorld/Vehicles.lua.
+  "ground": [
+    { "tag": "natural", "value": "water", "pixel": 0, "note": "Water" },
+    { "tag": "waterway", "value": "*", "pixel": 0 },
+    { "tag": "landuse", "value": "reservoir", "pixel": 0 },
+    { "tag": "natural", "value": "wood", "pixel": 255, "note": "primary_forest / DeepForest" },
+    { "tag": "landuse", "value": "forest", "pixel": 255 },
+    { "tag": "natural", "value": "scrub", "pixel": 217, "note": "birch_forest" },
+    { "tag": "landuse", "value": "farmland", "pixel": 141, "note": "FarmLand" },
+    { "tag": "landuse", "value": "farmyard", "pixel": 128, "note": "Farm" },
+    { "tag": "landuse", "value": "meadow", "pixel": 128 },
+    { "tag": "landuse", "value": "orchard", "pixel": 204, "note": "farm_forest" },
+    { "tag": "landuse", "value": "grass", "pixel": 64, "note": "ForagingNav, open grass" },
+    { "tag": "leisure", "value": "park", "pixel": 64 },
+    { "tag": "leisure", "value": "pitch", "pixel": 64 },
+    { "tag": "landuse", "value": "residential", "pixel": 115, "note": "townhouse / TownZone" },
+    { "tag": "landuse", "value": "commercial", "pixel": 115 },
+    { "tag": "landuse", "value": "retail", "pixel": 115 },
+    { "tag": "landuse", "value": "industrial", "pixel": 115 },
+    { "tag": "landuse", "value": "construction", "pixel": 254, "note": "dirt" },
+    { "tag": "landuse", "value": "quarry", "pixel": 254 },
+    { "tag": "amenity", "value": "parking", "pixel": 200, "note": "pz-world: paved, and full of cars" }
+  ],
+
+  // What the map is made of where nothing says otherwise. 96 is "$random"
+  // biome, DeepForest zone — the same value vanilla uses for untouched
+  // wilderness, so the edges of a generated city blend into forest the way
+  // Knox County does.
+  "defaultGroundPixel": 96,
+
+  // Painted under every building footprint and along every road so that
+  // worldgen does not grow a tree through a house. 254 is `dirt`, which
+  // BiomeMapConfig marks as spawning nothing.
+  "builtGroundPixel": 254
+}

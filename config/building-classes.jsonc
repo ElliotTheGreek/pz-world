@@ -1,0 +1,167 @@
+// Building classes, and how to recognise one from the rooms inside it.
+//
+// This table does two jobs at once, which is why it is one file:
+//
+//   * **Extraction.** A vanilla building is a list of rooms with semantic names
+//     ("kitchen", "grocerystorage", "prisoncells"). Scoring those names tells us
+//     what kind of building we just lifted out of the map, so it lands in the
+//     right bucket of the prefab library.
+//
+//   * **Placement.** The planner picks a bucket from OpenStreetMap tags (see
+//     config/osm-tags.jsonc) and then draws a prefab from it. The two ends have
+//     to agree on the same vocabulary or "hospitals where hospitals go" cannot
+//     work.
+//
+// Room-name evidence was measured across every shipped map on Build 42.20.2:
+// 9,546 buildings, 586 distinct room names. The counts in the notes are from
+// that survey and are what justify each rule's weight.
+//
+// Scoring: for each room in a building, every matching pattern adds its weight
+// to that class. Highest total wins; ties fall back to "unknown". A pattern is
+// a JavaScript regular expression tested against the whole room name.
+{
+  "classes": {
+    "house": {
+      "note": "detached and terraced homes — by far the commonest building",
+      "rooms": [
+        { "match": "^(bedroom|kidsbedroom)$", "weight": 3 },
+        { "match": "^livingroom$", "weight": 3 },
+        { "match": "^(kitchen|bathroom)$", "weight": 1 },
+        { "match": "^(closet|laundry|hall|diningroom)$", "weight": 1 }
+      ]
+    },
+    "apartment": {
+      "rooms": [
+        { "match": "^(motelroom|motelroomoccupied)$", "weight": 3 },
+        { "match": "^(elevator|stairwell|lobby)$", "weight": 2 }
+      ]
+    },
+    "grocery": {
+      "note": "supermarkets and corner shops — the store type players look for first",
+      "rooms": [
+        { "match": "^grocery", "weight": 6 },
+        { "match": "^(bakery|butcher)", "weight": 4 }
+      ]
+    },
+    "retail": {
+      "rooms": [
+        { "match": "store$", "weight": 5 },
+        { "match": "^(clothesstore|toolstore|electronicsstore|furniturestore)$", "weight": 6 },
+        { "match": "^(changeroom|dressingrooms)$", "weight": 3 },
+        { "match": "^(shop|showroom)", "weight": 4 }
+      ]
+    },
+    "restaurant": {
+      "rooms": [
+        { "match": "^restaurant", "weight": 6 },
+        { "match": "^(cafe|diner)", "weight": 5 },
+        { "match": "^kitchen$", "weight": 1 }
+      ]
+    },
+    "bar": {
+      "rooms": [
+        { "match": "^bar$", "weight": 6 },
+        { "match": "^(nightclub|pub)", "weight": 5 }
+      ]
+    },
+    "office": {
+      "rooms": [
+        { "match": "^office$", "weight": 3 },
+        { "match": "^(officestorage|breakroom|lobby|conferenceroom)$", "weight": 3 },
+        { "match": "^(cubicles|reception)", "weight": 3 }
+      ]
+    },
+    "medical": {
+      "note": "hospitals, clinics and surgeries",
+      "rooms": [
+        { "match": "^(medical|medclinic|medicaloffice|medicalstorage)", "weight": 6 },
+        { "match": "^hospital", "weight": 8 },
+        { "match": "^(laboratory|surgery|pharmacy)", "weight": 5 }
+      ]
+    },
+    "police": {
+      "rooms": [
+        { "match": "^police", "weight": 8 },
+        { "match": "^prisoncells$", "weight": 7 },
+        { "match": "^(security|lockerroom)$", "weight": 2 }
+      ]
+    },
+    "fire": {
+      "rooms": [
+        { "match": "^fire(station|dept)", "weight": 8 },
+        { "match": "^firetruck", "weight": 6 }
+      ]
+    },
+    "education": {
+      "rooms": [
+        { "match": "classroom$", "weight": 6 },
+        { "match": "^(school|library|gym)$", "weight": 3 }
+      ]
+    },
+    "church": {
+      "rooms": [
+        { "match": "^church$", "weight": 8 },
+        { "match": "^(chapel|sacristy)", "weight": 6 }
+      ]
+    },
+    "industrial": {
+      "rooms": [
+        { "match": "^(factory|warehouse|industrial)", "weight": 6 },
+        { "match": "^(mechanic|workshop)$", "weight": 4 },
+        { "match": "^storageunit$", "weight": 3 }
+      ]
+    },
+    "warehouse": {
+      "rooms": [
+        { "match": "^(storage|officestorage|farmstorage)$", "weight": 3 },
+        { "match": "^loadingbay", "weight": 5 }
+      ]
+    },
+    "garage": {
+      "rooms": [
+        { "match": "^(garage|garagestorage)$", "weight": 5 }
+      ]
+    },
+    "farm": {
+      "rooms": [
+        { "match": "^(barn|stable|horsebox|kennels|agriworkerdorm)$", "weight": 6 },
+        { "match": "^farm", "weight": 4 }
+      ]
+    },
+    "gas_station": {
+      "rooms": [
+        { "match": "^gasstore$", "weight": 8 },
+        { "match": "^(fuel|petrol)", "weight": 6 }
+      ]
+    },
+    "civic": {
+      "note": "town halls, post offices, anything municipal that is not one of the above",
+      "rooms": [
+        { "match": "^(courthouse|posthall|townhall|cityhall)", "weight": 6 },
+        { "match": "^(janitor|hall|hallway)$", "weight": 1 }
+      ]
+    },
+    "shed": {
+      "note": "outbuildings; also the fallback for very small footprints",
+      "rooms": [
+        { "match": "^(shed|outhouse)$", "weight": 5 }
+      ]
+    }
+  },
+
+  // A building whose rooms score nothing lands here. It is still usable — an
+  // unclassified building is placed as generic infill — but it never satisfies
+  // a request for a specific type.
+  "fallback": "unknown",
+
+  // Applied when the room evidence is weak, matching Terrula's feature profile
+  // (config/features/default.yaml): a small footprint is a shed, not a house.
+  // Areas are in squares, which are ~1 m each.
+  "areaFallback": [
+    { "maxArea": 30, "class": "shed" },
+    { "maxArea": 120, "class": "house" },
+    { "maxArea": 400, "class": "house" },
+    { "maxArea": 1200, "class": "retail" },
+    { "maxArea": 1e12, "class": "warehouse" }
+  ]
+}

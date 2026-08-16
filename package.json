@@ -1,0 +1,27 @@
+{
+  "name": "pz-world",
+  "version": "0.1.0",
+  "description": "Generate Project Zomboid B42 maps from real-world cities",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "pz-world": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node --max-old-space-size=4096 --test \"test/**/*.test.js\"",
+    "helper": "node helper/serve.js",
+    "extract": "node --max-old-space-size=6144 src/cli.js extract",
+    "prototypes": "node --max-old-space-size=4096 tools/emit-prototypes.js",
+    "canvas": "node tools/make-canvas.js",
+    "build": "node tools/build-mod.js",
+    "install-mod": "node tools/build-mod.js",
+    "setup": "npm run extract && npm run canvas && npm run prototypes && npm run build",
+    "mapgroups": "node tools/mapgroups.js pzworld",
+    "verify": "node src/cli.js verify",
+    "world": "node --max-old-space-size=8192 tools/build-world.js"
+  },
+  "dependencies": {}
+}
