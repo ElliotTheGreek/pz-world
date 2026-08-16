@@ -1,0 +1,16 @@
+node_modules/
+
+# Overpass responses and any other fetched source data.
+cache/
+
+# Generated mod folders.
+out/
+
+# Prefabs harvested from the user's own Project Zomboid install. These are
+# derived from The Indie Stone's shipped map data and must never be committed
+# or redistributed — see docs/DECISIONS.md D6.
+library/extracted/
+
+# Scratch
+*.log
+tmp/
