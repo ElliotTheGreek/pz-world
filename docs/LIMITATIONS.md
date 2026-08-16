@@ -61,6 +61,41 @@ rather than while it loads.
 
 ---
 
+## 3a. Vegetation and zombie population were switched off by two wrong numbers
+
+Both were single values, both were wrong, and both are fixed and pinned by tests.
+
+**Nothing grew, anywhere.** `BiomeMapConfig.lua` is the whole table, and grass was
+being written as pixel **115** across the entire authored footprint — `townhouse`
+planting in a `TownZone`. So a 5,632-square-wide area, town and countryside
+alike, was one continuous town: no trees, no shrubs, no rocks, and the zombie
+distribution smeared over 31 million squares instead of over the town. Light
+grass and meadow were worse: pixel **64** carries no `biome` key at all and
+grows nothing. Now the built-up mask picks — town stays 115, everything outside
+is `primary_forest` (255) or `organic_forest` (243).
+
+This works because `WorldGenChunk.genMapSquare` reads the biome entry for
+authored squares too: it calls `getMapBiome` for both `biome()` and `ore()` and
+plants through `doPending`, with a `getRocks()` branch beside it. The biome value
+is the only lever, and it was set to the one that does nothing.
+
+**The city had almost no zombies.** The lotheader's per-chunk `zombieIntensity`
+array — 1,024 bytes, read only by native code through
+`ZombiePopulationManager.n_loadChunk` — was **all zeros**, which means "no
+zombies belong here" for every chunk in the world. Measured across Muldraugh:
+
+```
+chunks containing a room      45,147   mean 1.20   (1 and 2 dominate)
+chunks containing no room    738,213   mean 0.32   (84% are zero)
+
+and within the built-up ones it tracks how much is roofed:
+  0-25%  0.99    25-50%  1.08    50-75%  1.17    75-100%  1.45
+```
+
+So a chunk with rooms over it now gets 1, or 2 once buildings cover half of it.
+
+---
+
 ## 3. Loot and zombie spawning do not follow room names
 
 Project Zomboid distributes loot by room name and container type. Worldgen
@@ -284,8 +319,16 @@ each one. Nothing downstream can invent what the source does not record.
 `src/emit/objects.js` writes them now. Vanilla's stall is one car — 3×5 or 5×3,
 7,037 of Muldraugh's 9,693 — so that is the unit, and every candidate is checked
 square by square against the surface grid and the building footprints so a car
-never lands on grass or in a wall. Car-park stalls are honest; kerbside stalls
-are the guess.
+never lands on grass or in a wall.
+
+The kerbside *spacing* is now measured too, and the first value was badly wrong:
+across Muldraugh's 9,693 stalls the mean distance from one to its nearest
+neighbour is **12.5 squares**, and this was set to 44. Three and a half times too
+sparse, which is why a generated city had almost no cars in it.
+
+What remains a guess is *where* along a street, not how often. Vanilla's stalls
+were placed by hand where a car would actually be — a driveway, a shop front, a
+junction — and nothing here can tell a driveway from a verge.
 
 ---
 

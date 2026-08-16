@@ -39,8 +39,14 @@ import fs from 'node:fs';
 export const STALL_SHORT = 3;
 export const STALL_LONG = 5;
 
-/** Squares between kerbside stalls. A guess; see the note above. */
-export const KERB_SPACING = 44;
+/**
+ * Squares between kerbside stalls.
+ *
+ * Measured, not guessed: across Muldraugh's 9,693 `ParkingStall` zones the mean distance
+ * from a stall to its nearest neighbour is **12.5 squares**. This was 44, which is three
+ * and a half times too sparse and is why a generated city had almost no cars in it.
+ */
+export const KERB_SPACING = 12;
 
 /** Surfaces a car may stand on. */
 const PAVED = new Set(['road', 'gravel', 'pavement']);

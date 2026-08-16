@@ -203,6 +203,8 @@ export function generateWorld(features, opts) {
     mapDir: opts.mapDir,
     log,
     onProgress,
+    builtUp,
+    seed: String(opts.seed ?? ''),
   });
 
   // ---- street names ------------------------------------------------------

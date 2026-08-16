@@ -255,6 +255,87 @@ export class CellBuilder {
     return [Math.max(lo, LEVEL_FLOOR), Math.min(hi, LEVEL_CEILING)];
   }
 
+  /**
+   * The lotheader's per-chunk zombie intensity — one byte per chunk, 32 x 32.
+   *
+   * **This was all zeros, and that is why a generated city was empty.** The byte array is
+   * `LotHeader.zombieIntensity`, and nothing in Java reads it: `ZombiePopulationManager`
+   * hands the cell to native code (`n_loadChunk`, `PZPopMan64.dll`) which drives the
+   * off-screen population. Zero everywhere means "no zombies belong here", everywhere.
+   *
+   * Measured across Muldraugh, per chunk:
+   *
+   *     chunks containing a room      45,147   mean 1.20   (1 and 2 dominate)
+   *     chunks containing no room    738,213   mean 0.32   (84% are zero)
+   *
+   * and within the built-up ones it tracks how much of the chunk is roofed:
+   *
+   *     roofed 0-25%   0.99      50-75%    1.17
+   *     roofed 25-50%  1.08      75-100%   1.45
+   *
+   * So: a chunk with rooms over it gets 1, or 2 once the buildings cover half of it;
+   * everything else gets 0, which is what 84% of vanilla's unroofed chunks get and what
+   * leaves the wilderness to the biome map.
+   */
+  zombieDensity() {
+    const density = Buffer.alloc(CHUNKS_PER_CELL * CHUNKS_PER_CELL);
+    const covered = new Uint16Array(CHUNKS_PER_CELL * CHUNKS_PER_CELL);
+
+    for (const room of this.rooms) {
+      for (const [rx, ry, rw, rh] of room.rects) {
+        // Room rects are cell-local but may overflow the cell, exactly as vanilla's do.
+        const x0 = Math.max(0, rx);
+        const y0 = Math.max(0, ry);
+        const x1 = Math.min(CELL_SIZE, rx + rw);
+        const y1 = Math.min(CELL_SIZE, ry + rh);
+        for (let y = y0; y < y1; y++) {
+          for (let x = x0; x < x1; x++) {
+            covered[((x / CHUNK_SIZE) | 0) + ((y / CHUNK_SIZE) | 0) * CHUNKS_PER_CELL]++;
+          }
+        }
+      }
+    }
+
+    const perChunk = CHUNK_SIZE * CHUNK_SIZE;
+    for (let i = 0; i < density.length; i++) {
+      if (!covered[i]) continue;
+      density[i] = covered[i] >= perChunk / 2 ? 2 : 1;
+    }
+    return density;
+  }
+
+  /**
+   * Which squares are indoors, for `chunkdata`'s room bit.
+   *
+   * **This was never being passed, so bit 16 was zero across the whole world** — the
+   * native population layer was told a city of five thousand houses had no interiors
+   * anywhere in it. `CellBuilder.write` called `chunkBits(cell)` with no predicate and
+   * the parameter defaulted to null.
+   *
+   * Vanilla sets it exactly on the room rectangles. Measured on Muldraugh cell 38_30:
+   * 533 squares carry bit 16 and all 533 are inside a room rect; cell 35_31 has no rooms
+   * and no bit set anywhere. Cell 51_7 carries more (19,483 against 15,990 ground-floor
+   * squares) because rooms on the upper storeys count too, which is why every level's
+   * rects go in here rather than level zero's.
+   *
+   * @returns {(x: number, y: number) => boolean} cell-local
+   */
+  roomMask() {
+    const mask = new Uint8Array(CELL_SIZE * CELL_SIZE);
+    for (const room of this.rooms) {
+      for (const [rx, ry, rw, rh] of room.rects) {
+        const x0 = Math.max(0, rx);
+        const y0 = Math.max(0, ry);
+        const x1 = Math.min(CELL_SIZE, rx + rw);
+        const y1 = Math.min(CELL_SIZE, ry + rh);
+        for (let y = y0; y < y1; y++) {
+          for (let x = x0; x < x1; x++) mask[y * CELL_SIZE + x] = 1;
+        }
+      }
+    }
+    return (x, y) => mask[y * CELL_SIZE + x] === 1;
+  }
+
   /** Flatten the sparse planes into the dense structure the writer wants. */
   finish() {
     const [lo, hi] = this.levelRange();
@@ -280,6 +361,7 @@ export class CellBuilder {
     this.header.buildings = this.buildings;
     this.header.minLevel = lo;
     this.header.maxLevel = hi;
+    this.header.density = this.zombieDensity();
     this.pack = pack;
     this.cell = new Cell(this.header, pack);
     this.levels = levels;
@@ -292,7 +374,7 @@ export class CellBuilder {
     fs.mkdirSync(dir, { recursive: true });
     const header = writeLotHeader(cell.header);
     const pack = writeLotPack(cell.pack);
-    const chunk = encodeChunkData(chunkBits(cell));
+    const chunk = encodeChunkData(chunkBits(cell, this.roomMask()));
     fs.writeFileSync(headerPath(dir, this.cx, this.cy), header);
     fs.writeFileSync(packPath(dir, this.cx, this.cy), pack);
     writeChunkData(chunkDataPath(dir, this.cx, this.cy), chunk);

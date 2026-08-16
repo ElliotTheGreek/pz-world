@@ -33,6 +33,7 @@ import { encodeIndexedPng } from '../formats/png.js';
 import { CellGrid } from './lotpack.js';
 import { encodeChunkData } from './chunkdata.js';
 import { loadBlendSets, baseTile, blendOverlays } from '../plan/blends.js';
+import { plantAt, vegetationFields, PLANTABLE, DENSITY_TOWN, DENSITY_WILD } from '../plan/vegetation.js';
 import { blockTiles } from '../extract/building.js';
 
 /** `$random` in `BiomeMapConfig.lua` — what the blank canvas says everywhere. */
@@ -44,11 +45,34 @@ const BLANK_BIOME = 96;
  * `blend` is a `FloorMaterial` from `blends_*`; a surface without one is outside the
  * blend system entirely — it receives overlays from its neighbours but never paints one,
  * which is what vanilla does with pavement (it uses kerbs there instead).
+ *
+ * ## The biome value decides whether anything grows, and it was wrong
+ *
+ * `media/lua/server/metazones/BiomeMapConfig.lua` is the whole table, and two of the
+ * values here spawned nothing at all:
+ *
+ *     64   zone = ForagingNav, **no biome key**     — nothing grows
+ *     254  biome = dirt        "will not spawn anything", says the file itself
+ *     115  biome = townhouse,  zone = TownZone      — sparse town planting
+ *     255  biome = primary_forest, ore = map_deep_forest, zone = DeepForest
+ *     243  biome = organic_forest                   — lighter woodland
+ *     96   biome = $random                          — the blank canvas; unusable here,
+ *                                                     `genMapSquare` discards authored
+ *                                                     squares marked with it
+ *
+ * Grass was 115 everywhere, so the entire authored footprint — town and countryside
+ * alike — was one continuous `TownZone` of townhouse planting: no trees, no shrubs, no
+ * rocks, and a zombie distribution spread over 31 million squares instead of over the
+ * town.
+ *
+ * So grass carries two values and the built-up mask picks between them: the town is
+ * `TownZone`, everything else is forest. `biomeWild` is what a surface becomes outside
+ * the town; a surface with only `biome` means the same either way.
  */
 export const SURFACES = {
-  grass: { blend: 'Grass_Dark', biome: 115 },
-  grassLight: { blend: 'Grass_Light', biome: 64 },
-  meadow: { blend: 'Grass_Medium', biome: 64 },
+  grass: { blend: 'Grass_Dark', biome: 115, biomeWild: 255 },
+  grassLight: { blend: 'Grass_Light', biome: 115, biomeWild: 243 },
+  meadow: { blend: 'Grass_Medium', biome: 115, biomeWild: 243 },
   dirt: { blend: 'Dirt', biome: 254 },
   sand: { blend: 'Sand', biome: 254 },
   gravel: { blend: 'Road_04', biome: 254 },
@@ -115,12 +139,14 @@ export function emitWorld({
   mapDir,
   log = () => {},
   onProgress = () => {},
+  builtUp = () => true,
+  seed = '',
 }) {
   const sets = loadBlendSets(catalogue);
   // No level range: each cell takes the one its content needs, so a building with a
   // basement keeps it and a cell of plain grass declares a single level.
   const grid = new CellGrid();
-  const stats = { buildings: 0, buildingSquares: 0, ground: 0, blends: 0, rooms: 0 };
+  const stats = { buildings: 0, buildingSquares: 0, ground: 0, blends: 0, rooms: 0, vegetation: 0, rocks: 0 };
 
   /**
    * Where a building stands, kept apart from what the ground is made of.
@@ -197,11 +223,32 @@ export function emitWorld({
   }
   log(`laid ${stats.blends} blend overlays`);
 
+  // ---- 5b. vegetation ----------------------------------------------------
+  // Trees, shrubs and groundcover, as tiles on top of the grass. The biome map does
+  // not put them on authored ground — see src/plan/vegetation.js for the measurement
+  // that settled it. Nothing is planted on tarmac, on pavement, or under a building.
+  onProgress({ stage: 'stamping', progress: 0.75, message: 'Planting trees and undergrowth' });
+  const fields = vegetationFields(seed);
+  for (let y = surfaces.minY; y < surfaces.minY + surfaces.h; y++) {
+    for (let x = surfaces.minX; x < surfaces.minX + surfaces.w; x++) {
+      if (isOccupied(x, y)) continue;
+      if (!PLANTABLE.has(surfaces.get(x, y))) continue;
+      const density = builtUp(x, y) ? DENSITY_TOWN : DENSITY_WILD;
+      const tile = plantAt(x, y, density, seed, fields);
+      if (!tile) continue;
+      if (grid.setSquare(x, y, 0, [tile])) {
+        if (tile.startsWith('boulders')) stats.rocks++;
+        else stats.vegetation++;
+      }
+    }
+  }
+  log(`planted ${stats.vegetation} trees, shrubs and groundcover; ${stats.rocks} boulders on outcrops`);
+
   // ---- write -------------------------------------------------------------
   onProgress({ stage: 'cells', progress: 0.78, message: `Writing ${grid.cells.size} map cells` });
   const written = grid.write(mapDir, { log });
   onProgress({ stage: 'cells', progress: 0.88, message: 'Writing the biome maps' });
-  writeBiomeMaps(surfaces, grid, mapDir, log);
+  writeBiomeMaps(surfaces, grid, mapDir, log, builtUp);
   const cleared = clearStaleCells(mapDir, grid, log);
 
   return { ...stats, ...written, cleared };
@@ -259,11 +306,12 @@ export function clearStaleCells(mapDir, grid, log = () => {}) {
  * `genMapSquare` no matter what we authored there. So every square inside the footprint
  * gets a real value, taken from the same surface grid the tiles came from.
  */
-export function writeBiomeMaps(surfaces, grid, mapDir, log = () => {}) {
+export function writeBiomeMaps(surfaces, grid, mapDir, log = () => {}, builtUp = () => true) {
   const biomeDir = path.join(mapDir, 'maps');
   fs.mkdirSync(biomeDir, { recursive: true });
 
   let cells = 0;
+  const counts = new Map();
   for (const builder of grid.cells.values()) {
     const pixels = new Uint8Array(CELL_SIZE * CELL_SIZE).fill(96);
     const ox = builder.cx * CELL_SIZE;
@@ -272,7 +320,14 @@ export function writeBiomeMaps(surfaces, grid, mapDir, log = () => {}) {
       for (let lx = 0; lx < CELL_SIZE; lx++) {
         const name = surfaces.get(ox + lx, oy + ly);
         if (!name) continue;
-        pixels[ly * CELL_SIZE + lx] = SURFACES[name].biome;
+        const surface = SURFACES[name];
+        // Town or countryside. Only the planted surfaces differ; tarmac is tarmac.
+        const pixel =
+          surface.biomeWild !== undefined && !builtUp(ox + lx, oy + ly)
+            ? surface.biomeWild
+            : surface.biome;
+        pixels[ly * CELL_SIZE + lx] = pixel;
+        counts.set(pixel, (counts.get(pixel) ?? 0) + 1);
       }
     }
     fs.writeFileSync(
@@ -281,6 +336,10 @@ export function writeBiomeMaps(surfaces, grid, mapDir, log = () => {}) {
     );
     cells++;
   }
-  log(`wrote ${cells} biome maps`);
+  const breakdown = [...counts]
+    .sort((a, b) => b[1] - a[1])
+    .map(([p, n]) => `${p}:${(n / 1e6).toFixed(1)}M`)
+    .join('  ');
+  log(`wrote ${cells} biome maps — ${breakdown}`);
   return cells;
 }

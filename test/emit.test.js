@@ -22,10 +22,12 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { CellBuilder, CellGrid } from '../src/emit/lotpack.js';
-import { encodeChunkData, decodeChunkData, computeChunkBits, BIT_SOLID } from '../src/emit/chunkdata.js';
+import { encodeChunkData, decodeChunkData, computeChunkBits, BIT_SOLID, BIT_ROOM } from '../src/emit/chunkdata.js';
+import { plantAt, vegetationFields, PLANTABLE, DENSITY_WILD } from '../src/plan/vegetation.js';
 import { toStreets, encodeStreetsXml, escapeXml, MAX_POINTS } from '../src/emit/streets.js';
 import { planParking, encodeObjectsLua } from '../src/emit/objects.js';
-import { SurfaceGrid } from '../src/emit/world.js';
+import { SurfaceGrid, writeBiomeMaps } from '../src/emit/world.js';
+import { decodePng } from '../src/formats/png.js';
 import { readCell } from '../src/formats/cell.js';
 import { CELL_SIZE, CHUNK_SIZE } from '../src/formats/lotheader.js';
 import { findInstall } from '../src/lib/pzinstall.js';
@@ -204,6 +206,112 @@ test('a grid puts world squares in the right cells and rooms in the owning one',
   assert.equal(owner.rooms.length, 1, 'the room should belong to the cell holding its corner');
   assert.deepEqual(owner.rooms[0].rects, [[CELL_SIZE - 4, CELL_SIZE - 4, 10, 10]]);
   assert.ok(owner.rooms[0].rects[0][0] + owner.rooms[0].rects[0][2] > CELL_SIZE, 'this rect should overflow the cell');
+});
+
+test('a chunk with buildings over it carries a zombie intensity, and empty ground does not', () => {
+  const builder = new CellBuilder(0, 0);
+  for (let y = 0; y < CELL_SIZE; y++) {
+    for (let x = 0; x < CELL_SIZE; x++) builder.putSquare(x, y, 0, ['blends_natural_01_16']);
+  }
+  // A building filling more than half of chunk 0,0 and a corner of chunk 1,0.
+  builder.addRoom({ name: 'kitchen', level: 0, rects: [[0, 0, 8, 6]], objects: [] });
+  builder.addRoom({ name: 'shed', level: 0, rects: [[8, 0, 2, 2]], objects: [] });
+  const cell = builder.finish();
+
+  // Zero everywhere is what the native population layer reads as "no zombies here",
+  // and it is what every generated city shipped before this.
+  assert.equal(cell.header.density[0], 2, 'a chunk more than half roofed should read 2');
+  assert.equal(cell.header.density[1], 1, 'a lightly roofed chunk should read 1');
+  assert.equal(cell.header.density[5], 0, 'open ground carries nothing, as 84% of vanilla does');
+  assert.ok(cell.header.density.some((v) => v > 0), 'the whole block must not be zero');
+});
+
+test('grass outside the town is forest, not TownZone', () => {
+  const dir = tmpdir();
+  try {
+    const surfaces = new SurfaceGrid({ minX: 0, minY: 0, maxX: CELL_SIZE - 1, maxY: CELL_SIZE - 1 });
+    surfaces.fill('grass');
+    const grid = new CellGrid();
+    grid.putSquare(0, 0, 0, ['blends_natural_01_16']);
+
+    // Only the left half is built up.
+    writeBiomeMaps(surfaces, grid, dir, () => {}, (x) => x < 128);
+    const png = decodePng(fs.readFileSync(path.join(dir, 'maps', 'biomemap_0_0.png')));
+
+    assert.equal(png.pixels[10], 115, 'town grass is TownZone/townhouse');
+    assert.equal(png.pixels[200], 255, 'grass outside the town is primary_forest');
+    // 64 spawns nothing at all: it has no `biome` key in BiomeMapConfig.lua.
+    assert.ok(!png.pixels.includes(64), 'no square may be left on a biome that grows nothing');
+    assert.ok(!png.pixels.includes(96), '$random squares are discarded by genMapSquare');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('squares inside a room carry the chunkdata room bit', () => {
+  const builder = new CellBuilder(0, 0);
+  for (let y = 0; y < CHUNK_SIZE; y++) {
+    for (let x = 0; x < CHUNK_SIZE; x++) builder.putSquare(x, y, 0, ['blends_natural_01_16']);
+  }
+  builder.addRoom({ name: 'kitchen', level: 0, rects: [[2, 2, 3, 3]], objects: [] });
+  const bits = computeChunkBits(builder.finish(), builder.roomMask());
+
+  // Vanilla sets bit 16 exactly on the room rectangles — 533 of 533 in Muldraugh
+  // cell 38_30. Leaving it zero tells the native population layer the city is
+  // entirely outdoors.
+  assert.equal(bits[3 * CELL_SIZE + 3] & BIT_ROOM, BIT_ROOM, 'inside the room rect');
+  assert.equal(bits[7 * CELL_SIZE + 7] & BIT_ROOM, 0, 'outside it');
+});
+
+test('noise arranges vegetation into stands without changing how much there is', () => {
+  const fields = vegetationFields('seed');
+  const side = 600;
+  let planted = 0;
+  let rocks = 0;
+  for (let y = 0; y < side; y++) {
+    for (let x = 0; x < side; x++) {
+      const t = plantAt(x, y, DENSITY_WILD, 'seed', fields);
+      if (!t) continue;
+      if (t.startsWith('boulders')) rocks++;
+      else planted++;
+    }
+  }
+  const n = side * side;
+  const rate = planted / n;
+
+  // The mean is vanilla's; only the arrangement is noise. 2*fbm has mean ~1, so
+  // modulating by it must not move the total by much.
+  assert.ok(
+    Math.abs(rate - DENSITY_WILD) < 0.04,
+    `expected about ${DENSITY_WILD}, got ${rate.toFixed(3)}`,
+  );
+  assert.ok(rocks > 0 && rocks / n < 0.01, `boulders should be rare, got ${(rocks / n).toFixed(4)}`);
+
+  // Clumped, not evenly scattered: the densest 60-square block should be well ahead
+  // of the sparsest. A flat probability makes these nearly equal.
+  const blocks = [];
+  for (let by = 0; by + 60 <= side; by += 60) {
+    for (let bx = 0; bx + 60 <= side; bx += 60) {
+      let c = 0;
+      for (let y = by; y < by + 60; y++) {
+        for (let x = bx; x < bx + 60; x++) if (plantAt(x, y, DENSITY_WILD, 'seed', fields)) c++;
+      }
+      blocks.push(c / 3600);
+    }
+  }
+  blocks.sort((a, b) => a - b);
+  const lo = blocks[0];
+  const hi = blocks[blocks.length - 1];
+  assert.ok(hi > lo * 2, `expected stands and clearings, got ${lo.toFixed(3)}..${hi.toFixed(3)}`);
+
+  // Deterministic: the same city rebuilds as the same city.
+  assert.equal(
+    plantAt(41, 17, DENSITY_WILD, 'seed', fields),
+    plantAt(41, 17, DENSITY_WILD, 'seed', vegetationFields('seed')),
+  );
+  // Tarmac and pavement are not plantable surfaces.
+  assert.ok(!PLANTABLE.has('road') && !PLANTABLE.has('pavement'));
+  assert.ok(PLANTABLE.has('grass'));
 });
 
 // ----------------------------------------------------------------- streets
