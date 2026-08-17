@@ -21,13 +21,16 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { CellBuilder, CellGrid } from '../src/emit/lotpack.js';
+import { CellBuilder, CellGrid, ZOMBIE_ROOFED, ZOMBIE_DENSE } from '../src/emit/lotpack.js';
 import { encodeChunkData, decodeChunkData, computeChunkBits, BIT_SOLID, BIT_ROOM } from '../src/emit/chunkdata.js';
 import { plantAt, vegetationFields, PLANTABLE, DENSITY_WILD } from '../src/plan/vegetation.js';
 import { toStreets, encodeStreetsXml, escapeXml, MAX_POINTS } from '../src/emit/streets.js';
 import { planParking, encodeObjectsLua } from '../src/emit/objects.js';
 import { SurfaceGrid, writeBiomeMaps } from '../src/emit/world.js';
 import { decodePng } from '../src/formats/png.js';
+import { Noise } from '../src/lib/noise.js';
+import { baseTile } from '../src/plan/blends.js';
+import { decayAt } from '../src/plan/decay.js';
 import { readCell } from '../src/formats/cell.js';
 import { CELL_SIZE, CHUNK_SIZE } from '../src/formats/lotheader.js';
 import { findInstall } from '../src/lib/pzinstall.js';
@@ -220,8 +223,8 @@ test('a chunk with buildings over it carries a zombie intensity, and empty groun
 
   // Zero everywhere is what the native population layer reads as "no zombies here",
   // and it is what every generated city shipped before this.
-  assert.equal(cell.header.density[0], 2, 'a chunk more than half roofed should read 2');
-  assert.equal(cell.header.density[1], 1, 'a lightly roofed chunk should read 1');
+  assert.equal(cell.header.density[0], ZOMBIE_DENSE, 'a chunk more than half roofed reads the dense value');
+  assert.equal(cell.header.density[1], ZOMBIE_ROOFED, 'a lightly roofed chunk reads the roofed value');
   assert.equal(cell.header.density[5], 0, 'open ground carries nothing, as 84% of vanilla does');
   assert.ok(cell.header.density.some((v) => v > 0), 'the whole block must not be zero');
 });
@@ -312,6 +315,63 @@ test('noise arranges vegetation into stands without changing how much there is',
   // Tarmac and pavement are not plantable surfaces.
   assert.ok(!PLANTABLE.has('road') && !PLANTABLE.has('pavement'));
   assert.ok(PLANTABLE.has('grass'));
+});
+
+test('ground variants come down in patches, not as a per-square dither', () => {
+  const set = { sheet: 'blends_natural_01', base: 16, variants: [0, 5, 6, 7] };
+  const texture = new Noise('texture:test');
+
+  const runLength = (useNoise) => {
+    const runs = [];
+    let cur = null;
+    let len = 0;
+    for (let x = 0; x < 3000; x++) {
+      const t = baseTile(set, x, 500, useNoise ? texture : null);
+      if (t === cur) len++;
+      else {
+        if (cur !== null) runs.push(len);
+        cur = t;
+        len = 1;
+      }
+    }
+    return runs.reduce((a, b) => a + b, 0) / runs.length;
+  };
+
+  // Choosing from a per-square hash gives a run length of 1 — every square a different
+  // variant, which reads as a uniform dither over a whole city rather than as ground.
+  assert.ok(runLength(false) < 2, 'the hash fallback should be per-square');
+  assert.ok(runLength(true) > 20, `expected broad patches, got ${runLength(true).toFixed(1)} squares`);
+});
+
+test('road wear is patchy and covers a visible share of the tarmac', () => {
+  const field = new Noise('wear:test');
+  let hit = 0;
+  let n = 0;
+  const blocks = [];
+  for (let by = 0; by < 480; by += 60) {
+    for (let bx = 0; bx < 480; bx += 60) {
+      let c = 0;
+      for (let y = by; y < by + 60; y++) {
+        for (let x = bx; x < bx + 60; x++) {
+          n++;
+          if (decayAt(x, y, field, 's')) {
+            hit++;
+            c++;
+          }
+        }
+      }
+      blocks.push(c / 3600);
+    }
+  }
+  const rate = hit / n;
+  // The first attempt stained 347 squares out of 1.9 million because the fBm field
+  // never reached the threshold. Anything near zero is the feature not existing.
+  assert.ok(rate > 0.02 && rate < 0.2, `expected a visible but not total wear rate, got ${rate.toFixed(3)}`);
+  blocks.sort((a, b) => a - b);
+  assert.ok(
+    blocks[blocks.length - 1] > blocks[0] * 3,
+    'wear should pool in patches, not speckle evenly',
+  );
 });
 
 // ----------------------------------------------------------------- streets

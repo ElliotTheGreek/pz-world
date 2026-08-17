@@ -34,6 +34,8 @@ import { CellGrid } from './lotpack.js';
 import { encodeChunkData } from './chunkdata.js';
 import { loadBlendSets, baseTile, blendOverlays } from '../plan/blends.js';
 import { plantAt, vegetationFields, PLANTABLE, DENSITY_TOWN, DENSITY_WILD } from '../plan/vegetation.js';
+import { decayAt } from '../plan/decay.js';
+import { Noise } from '../lib/noise.js';
 import { blockTiles } from '../extract/building.js';
 
 /** `$random` in `BiomeMapConfig.lua` — what the blank canvas says everywhere. */
@@ -146,7 +148,7 @@ export function emitWorld({
   // No level range: each cell takes the one its content needs, so a building with a
   // basement keeps it and a cell of plain grass declares a single level.
   const grid = new CellGrid();
-  const stats = { buildings: 0, buildingSquares: 0, ground: 0, blends: 0, rooms: 0, vegetation: 0, rocks: 0 };
+  const stats = { buildings: 0, buildingSquares: 0, ground: 0, blends: 0, rooms: 0, vegetation: 0, rocks: 0, decay: 0 };
 
   /**
    * Where a building stands, kept apart from what the ground is made of.
@@ -192,18 +194,30 @@ export function emitWorld({
   // ---- 4. ground ---------------------------------------------------------
   // Every square the footprint covers that nothing has claimed. Without this the
   // chunk is incomplete at level 0 and the game regenerates it procedurally.
+  // The variant of a ground tile is chosen from a low-frequency field rather than a
+  // per-square hash, so grass and tarmac come down in broad patches instead of an even
+  // dither that makes the tile grid legible across a whole city. Roads then take a
+  // second, finer field of wear on top.
+  const texture = new Noise(`texture:${seed}`);
+  const wear = new Noise(`wear:${seed}`);
+
   for (let y = surfaces.minY; y < surfaces.minY + surfaces.h; y++) {
     for (let x = surfaces.minX; x < surfaces.minX + surfaces.w; x++) {
       if (grid.hasSquare(x, y, 0)) continue;
       const name = surfaces.get(x, y);
       if (!name) continue;
       const surface = SURFACES[name];
-      const tile = surface.blend ? baseTile(sets.get(surface.blend), x, y) : surface.tile;
+      const tile = surface.blend ? baseTile(sets.get(surface.blend), x, y, texture) : surface.tile;
       if (!tile) continue;
       if (grid.putSquare(x, y, 0, [tile])) stats.ground++;
+
+      if (name === 'road' || name === 'gravel') {
+        const stain = decayAt(x, y, wear, seed);
+        if (stain && grid.setSquare(x, y, 0, [stain])) stats.decay++;
+      }
     }
   }
-  log(`laid ${stats.ground} squares of ground`);
+  log(`laid ${stats.ground} squares of ground, ${stats.decay} of them worn`);
 
   onProgress({ stage: 'stamping', progress: 0.72, message: 'Blending the edges between surfaces' });
 

@@ -75,6 +75,14 @@ export const LEVEL_FLOOR = -32;
 export const LEVEL_CEILING = 31;
 
 /**
+ * Per-chunk zombie intensity for a chunk with buildings over it, and for one more than
+ * half covered. Vanilla's equivalents are 1 and 2; see `zombieDensity` for why these are
+ * four times that. These two numbers are the dial for how busy a generated town is.
+ */
+export const ZOMBIE_ROOFED = 4;
+export const ZOMBIE_DENSE = 8;
+
+/**
  * One cell under construction.
  *
  * Tile names are interned per cell because that is how the format stores them: the
@@ -273,9 +281,18 @@ export class CellBuilder {
    *     roofed 0-25%   0.99      50-75%    1.17
    *     roofed 25-50%  1.08      75-100%   1.45
    *
-   * So: a chunk with rooms over it gets 1, or 2 once the buildings cover half of it;
-   * everything else gets 0, which is what 84% of vanilla's unroofed chunks get and what
-   * leaves the wilderness to the biome map.
+   * ## The value is deliberately above vanilla's, and here is why
+   *
+   * Setting roofed chunks to vanilla's own 1 and 2 produced a city that still read as
+   * empty when it was walked. The byte is consumed by `PZPopMan64.dll` — `MapCollisionData`
+   * reads it with `LotHeader.getZombieIntensityForChunk` and passes it to
+   * `n_initMetaChunk`, so what it means numerically is not visible from here and cannot
+   * be derived, only tried.
+   *
+   * The brief is at least two zombies per building. A building here covers about five and
+   * a half chunks, so `ROOFED` and `DENSE` are set to four times vanilla's typical values
+   * — inside the range vanilla itself uses, since its histogram runs past 10 — and these
+   * two constants are the dial if that overshoots.
    */
   zombieDensity() {
     const density = Buffer.alloc(CHUNKS_PER_CELL * CHUNKS_PER_CELL);
@@ -299,7 +316,7 @@ export class CellBuilder {
     const perChunk = CHUNK_SIZE * CHUNK_SIZE;
     for (let i = 0; i < density.length; i++) {
       if (!covered[i]) continue;
-      density[i] = covered[i] >= perChunk / 2 ? 2 : 1;
+      density[i] = covered[i] >= perChunk / 2 ? ZOMBIE_DENSE : ZOMBIE_ROOFED;
     }
     return density;
   }

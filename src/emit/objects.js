@@ -35,6 +35,8 @@
 
 import fs from 'node:fs';
 
+import { hashString } from '../lib/rng.js';
+
 /** A car: three squares across, five along. The dominant vanilla stall. */
 export const STALL_SHORT = 3;
 export const STALL_LONG = 5;
@@ -42,11 +44,43 @@ export const STALL_LONG = 5;
 /**
  * Squares between kerbside stalls.
  *
- * Measured, not guessed: across Muldraugh's 9,693 `ParkingStall` zones the mean distance
- * from a stall to its nearest neighbour is **12.5 squares**. This was 44, which is three
- * and a half times too sparse and is why a generated city had almost no cars in it.
+ * Measured: across Muldraugh's 9,693 `ParkingStall` zones the mean distance from a stall
+ * to its nearest neighbour is **12.5 squares**. This was 44, which was three and a half
+ * times too sparse.
+ *
+ * It is back up to 20 because kerbside is no longer the main source. See `BUILDING_REACH`.
  */
-export const KERB_SPACING = 12;
+export const KERB_SPACING = 20;
+
+/**
+ * How far from a building to look for somewhere to park, and how often to bother.
+ *
+ * Spacing stalls evenly along every street produced 9,620 of them and still read as
+ * empty, because evenly-along-a-street is not where cars are. Measured against
+ * Muldraugh's own stalls and its building rectangles:
+ *
+ *     distance from a stall to the nearest building
+ *     p10  1     p25  2     median  4     p75  13     p90  27
+ *     70.2% are within ten squares of a building
+ *
+ * So a car belongs to a building, not to a road. Each placed building now looks outward
+ * for the nearest square a car could stand on and claims it, which puts the cars where
+ * the houses are and makes the count scale with the town instead of with the road
+ * network. `BUILDING_SHARE` is what fraction of buildings get one — the brief was half
+ * to one car per building.
+ */
+export const BUILDING_REACH = 12;
+
+/**
+ * What fraction of buildings are offered a stall.
+ *
+ * Not the same as what fraction get one: a building with no paved square within
+ * `BUILDING_REACH` — set back behind others, or in the middle of a block — finds nowhere
+ * to park and is skipped. At 0.75 the first build came out at 0.40 cars per building
+ * against a brief of half to one, so this asks for every building and lets the search
+ * failures do the thinning.
+ */
+export const BUILDING_SHARE = 1;
 
 /** Surfaces a car may stand on. */
 const PAVED = new Set(['road', 'gravel', 'pavement']);
@@ -171,6 +205,42 @@ export function stallsAlongRoad(road, free, { spacing = KERB_SPACING } = {}) {
 }
 
 /**
+ * A place to park for one building: the nearest square a car can stand on.
+ *
+ * Searched as expanding rings from the building's edge so the first hit is the closest,
+ * which is what puts the car on the drive or at the kerb directly outside rather than
+ * two streets away. Orientation follows the shape of the gap — a stall against the long
+ * side of a building lies along it.
+ */
+export function stallForBuilding(b, free, taken, { reach = BUILDING_REACH } = {}) {
+  // Along each side as well as out from it. Probing only the midpoint of each side
+  // found somewhere to park for 40% of buildings — a house whose frontage meets the
+  // street off-centre, which is most of them, had nothing directly opposite its middle.
+  const alongs = [0.2, 0.5, 0.8];
+
+  for (let r = 1; r <= reach; r++) {
+    for (const a of alongs) {
+      const cx = Math.round(b.x + b.w * a - STALL_SHORT / 2);
+      const cy = Math.round(b.y + b.h * a - STALL_SHORT / 2);
+      // The four sides, nearest first. Order is fixed so the result is deterministic.
+      const candidates = [
+        { x: cx, y: b.y - r - STALL_LONG, w: STALL_SHORT, h: STALL_LONG },
+        { x: cx, y: b.y + b.h + r, w: STALL_SHORT, h: STALL_LONG },
+        { x: b.x - r - STALL_LONG, y: cy, w: STALL_LONG, h: STALL_SHORT },
+        { x: b.x + b.w + r, y: cy, w: STALL_LONG, h: STALL_SHORT },
+      ];
+      for (const c of candidates) {
+        if (taken(c)) continue;
+        if (rectFree(free, c.x, c.y, c.w, c.h)) {
+          return { name: '', type: 'ParkingStall', x: c.x, y: c.y, z: 0, width: c.w, height: c.h };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Every stall for a generated city.
  *
  * @param {object} opts
@@ -179,25 +249,73 @@ export function stallsAlongRoad(road, free, { spacing = KERB_SPACING } = {}) {
  * @param {object[]} opts.roads  projected roads, in world squares
  * @param {{x: number, y: number, w: number, h: number}[]} opts.placements
  */
-export function planParking({ surfaces, cover = [], roads = [], placements = [], log = () => {} }) {
+export function planParking({
+  surfaces,
+  cover = [],
+  roads = [],
+  placements = [],
+  seed = '',
+  log = () => {},
+}) {
   const free = freeSquareTest(surfaces, placements);
   const stalls = [];
-  let areas = 0;
 
+  // Claimed squares, so two buildings on the same street do not park in each other.
+  const CLAIM = 16;
+  const claimed = new Map();
+  const taken = (r) => {
+    for (let gx = Math.floor(r.x / CLAIM); gx <= Math.floor((r.x + r.w - 1) / CLAIM); gx++) {
+      for (let gy = Math.floor(r.y / CLAIM); gy <= Math.floor((r.y + r.h - 1) / CLAIM); gy++) {
+        for (const q of claimed.get(`${gx},${gy}`) ?? []) {
+          if (r.x < q.x + q.width && q.x < r.x + r.w && r.y < q.y + q.height && q.y < r.y + r.h) return true;
+        }
+      }
+    }
+    return false;
+  };
+  const claim = (s) => {
+    for (let gx = Math.floor(s.x / CLAIM); gx <= Math.floor((s.x + s.width - 1) / CLAIM); gx++) {
+      for (let gy = Math.floor(s.y / CLAIM); gy <= Math.floor((s.y + s.height - 1) / CLAIM); gy++) {
+        const key = `${gx},${gy}`;
+        if (!claimed.has(key)) claimed.set(key, []);
+        claimed.get(key).push(s);
+      }
+    }
+    stalls.push(s);
+  };
+
+  // Car parks first: a mapped lot is the one place a car certainly belongs.
+  let areas = 0;
   for (const area of cover) {
     if (area.pixel !== 200) continue;
     const found = stallsInArea(area.points, free);
     if (found.length) areas++;
-    stalls.push(...found);
+    for (const s of found) if (!taken(s)) claim(s);
   }
   const inLots = stalls.length;
 
-  for (const road of roads) {
-    if (!KERBSIDE_CLASSES.has(road.cls)) continue;
-    stalls.push(...stallsAlongRoad(road, free));
+  // Then one per building, which is where 70% of vanilla's stalls are.
+  let byBuilding = 0;
+  for (const b of placements) {
+    if (hashString(`park:${seed}:${b.x},${b.y}`) % 1000 >= Math.round(BUILDING_SHARE * 1000)) continue;
+    const s = stallForBuilding(b, free, taken);
+    if (!s) continue;
+    claim(s);
+    byBuilding++;
   }
 
-  log(`${stalls.length} parking stalls — ${inLots} in ${areas} car parks, ${stalls.length - inLots} at the kerb`);
+  // Kerbside last, and sparsely: it fills the through-roads and the edges of town.
+  for (const road of roads) {
+    if (!KERBSIDE_CLASSES.has(road.cls)) continue;
+    for (const s of stallsAlongRoad(road, free)) if (!taken(s)) claim(s);
+  }
+
+  const kerb = stalls.length - inLots - byBuilding;
+  log(
+    `${stalls.length} parking stalls — ${inLots} in ${areas} car parks, ` +
+      `${byBuilding} beside buildings (${(byBuilding / Math.max(1, placements.length)).toFixed(2)} per building), ` +
+      `${kerb} at the kerb`,
+  );
   return stalls;
 }
 

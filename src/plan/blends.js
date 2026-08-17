@@ -176,9 +176,37 @@ function pick(list, x, y, salt) {
   return list[h % list.length];
 }
 
-/** The solid tile for a surface on this square, chosen from its base variants. */
-export function baseTile(set, x, y) {
-  return `${set.sheet}_${set.base + pick(set.variants, x, y, 'base')}`;
+/**
+ * How many squares across a patch of one ground variant runs.
+ *
+ * A base surface has four interchangeable variants, and choosing between them with a
+ * per-square hash is white noise: statistically even, and visually a uniform dither that
+ * makes 30 million squares of grass read as one flat texture with a repeating pattern in
+ * it. Low-frequency noise instead puts each variant down in broad patches, which is what
+ * ground actually looks like from above and what stops the tiling being legible.
+ *
+ * Large on purpose — a patch is most of a city block.
+ */
+export const TEXTURE_SCALE = 110;
+
+/**
+ * The solid tile for a surface on this square, chosen from its base variants.
+ *
+ * @param {BlendSet} set
+ * @param {number} x
+ * @param {number} y
+ * @param {import('../lib/noise.js').Noise} [texture] low-frequency field; without it the
+ *   choice falls back to the old per-square hash
+ */
+export function baseTile(set, x, y, texture = null) {
+  if (!texture || set.variants.length <= 1) {
+    return `${set.sheet}_${set.base + pick(set.variants, x, y, 'base')}`;
+  }
+  const n = texture.fbm(x, y, TEXTURE_SCALE, 2);
+  let i = Math.floor(n * set.variants.length);
+  if (i < 0) i = 0;
+  if (i >= set.variants.length) i = set.variants.length - 1;
+  return `${set.sheet}_${set.base + set.variants[i]}`;
 }
 
 /**

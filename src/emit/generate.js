@@ -219,6 +219,7 @@ export function generateWorld(features, opts) {
     cover: projected.ground,
     roads: projected.roads,
     placements,
+    seed: String(opts.seed ?? ''),
     log,
   });
   writeObjects(path.join(opts.mapDir, 'objects.lua'), stalls);

@@ -62,9 +62,20 @@ export const VEGETATION = [
   { tile: 'vegetation_farm_01_32', weight: 4964 },
 ];
 
-/** Measured share of grass squares that carry something. */
-export const DENSITY_TOWN = 0.185;
-export const DENSITY_WILD = 0.281;
+/**
+ * Share of grass squares that carry something.
+ *
+ * Vanilla's measured rates are 18.5% in town and 28.1% outside it. These are **half**
+ * that, by request after seeing the first build in game: at the full rate a generated
+ * world reads as denser than Muldraugh does, because vanilla's woodland is broken up by
+ * hand-placed clearings, tracks and yards that nothing here reproduces — the measurement
+ * is right and the result still looked too thick.
+ *
+ * `THINNING` is the dial; 1 restores the measured rates.
+ */
+export const THINNING = 0.5;
+export const DENSITY_TOWN = 0.185 * THINNING;
+export const DENSITY_WILD = 0.281 * THINNING;
 
 /** Surfaces that may be planted. Tarmac and pavement are not among them. */
 export const PLANTABLE = new Set(['grass', 'grassLight', 'meadow']);
