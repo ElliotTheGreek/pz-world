@@ -15,6 +15,7 @@
  */
 
 import fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 export function stripLua(src) {
   let out = '';
@@ -84,8 +85,11 @@ export function checkBlocks(src) {
   };
 }
 
+// Only act as a CLI when run directly. This used to fire on *import* as well, and
+// `checkBlocks` is imported by tools/build-mod.js — so `node tools/build-mod.js --fresh`
+// made this try to open a file called `--fresh` and killed the build before it started.
 const file = process.argv[2];
-if (file) {
+if (file && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const r = checkBlocks(fs.readFileSync(file, 'utf8'));
   process.stdout.write(
     `${file}\n  openers ${JSON.stringify(r.opens)} = ${r.totalOpens}\n` +

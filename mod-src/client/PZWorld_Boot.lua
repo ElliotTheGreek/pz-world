@@ -82,4 +82,30 @@ safe("revealHooks", function()
     end)
 end)
 
+--[[
+    F9 — put me back in the town.
+
+    Anything that teleports the player somewhere it then fails to build leaves them in an
+    unlit void with no context menu and no way out, and without debug mode there is nothing
+    they can do about it.
+
+    This reads nothing from any other mod and changes nothing about how any other mod
+    behaves. It moves *our* player to the middle of *our* town, which is the centre of the
+    canvas because that is where the generator puts the city.
+]]
+safe("rescueKey", function()
+    Events.OnCustomUIKey.Add(function(key)
+        if key ~= Keyboard.KEY_F9 then return end
+        local ok, err = pcall(function()
+            local player = getPlayer()
+            if not player then return end
+            local x, y = PZWorld.Config.ORIGIN_X, PZWorld.Config.ORIGIN_Y
+            player:setX(x); player:setY(y); player:setZ(0)
+            player:setLastX(x); player:setLastY(y); player:setLastZ(0)
+            print(string.format("PZWORLD: moved you to the town centre at %d, %d", x, y))
+        end)
+        if not ok then print("PZWORLD: could not move you: " .. tostring(err)) end
+    end)
+end)
+
 print("PZWORLD: client loaded (F7 = world builder, F8 = reveal map)")

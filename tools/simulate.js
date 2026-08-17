@@ -33,7 +33,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const DEG = 180 / Math.PI;
 
 // Must match Config.lua.
-const CANVAS_CELLS = 64;
+const CANVAS_CELLS = 80;
 const CELL_SIZE = 256;
 const WORLD = CANVAS_CELLS * CELL_SIZE;
 const ORIGIN = Math.floor(WORLD / 2);

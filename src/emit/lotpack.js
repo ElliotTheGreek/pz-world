@@ -79,8 +79,28 @@ export const LEVEL_CEILING = 31;
  * half covered. Vanilla's equivalents are 1 and 2; see `zombieDensity` for why these are
  * four times that. These two numbers are the dial for how busy a generated town is.
  */
-export const ZOMBIE_ROOFED = 4;
-export const ZOMBIE_DENSE = 8;
+export const ZOMBIE_ROOFED = 8;
+export const ZOMBIE_DENSE = 16;
+
+/**
+ * The narrowest range a cell may declare, whatever its content.
+ *
+ * Trimming a cell to exactly the levels it uses is what the shipped maps do — 3,068
+ * Muldraugh cells declare `0..0` — and it is correct in isolation. It is not safe here.
+ *
+ * Other mods put things on levels this generator knows nothing about. RVLife's trailer
+ * interiors go in through the Basements API, and after the trimming landed a trailer
+ * could be entered but not left: you can be teleported onto a square the game creates on
+ * demand, but the machinery that brings you back has nothing to attach to in a cell whose
+ * lotpack never declared the level. Every authored cell used to declare `0..7` and every
+ * one of those mods worked.
+ *
+ * The cost of declaring eight levels a cell rather than one is skip runs — eight bytes
+ * per empty level per chunk, about 20 MB across a city, against 445 MB of cell data. That
+ * is nothing next to breaking somebody else's mod.
+ */
+export const MIN_DECLARED_LEVEL = 0;
+export const MAX_DECLARED_LEVEL = 7;
 
 /**
  * One cell under construction.
@@ -250,8 +270,8 @@ export class CellBuilder {
    * (see `incompleteChunks`), so a range that excluded it would be a bug elsewhere.
    */
   levelRange() {
-    let lo = 0;
-    let hi = 0;
+    let lo = MIN_DECLARED_LEVEL;
+    let hi = MAX_DECLARED_LEVEL;
     for (const level of this.planes.keys()) {
       if (level < lo) lo = level;
       if (level > hi) hi = level;

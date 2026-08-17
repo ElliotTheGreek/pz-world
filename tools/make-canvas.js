@@ -37,11 +37,19 @@ export const MAP_NAME = 'PZWorld';
 export const MOD_ID = 'pzworld';
 
 /**
- * Cells per side. 32 × 256 = 8,192 squares ≈ 8 km across, which comfortably
- * holds a real city at the radii this mod offers. An empty cell is ~10 kB, so
- * the whole canvas is about 11 MB.
+ * Cells per side. 80 × 256 = 20,480 squares ≈ 20.5 km across.
+ *
+ * That is larger than any city this mod generates needs, and the extra is not for the
+ * city. A great many mods hardcode Knox County coordinates — RV Life puts its trailer
+ * interiors at x 16,896–18,176 — and a coordinate that falls outside the canvas has no
+ * cell, so `IsoLot.getHeader` returns null and whatever the mod was doing fails silently.
+ * Knox County's own extent is 78 × 63 cells, so 80 covers every coordinate a mod could
+ * reasonably have baked in against vanilla.
+ *
+ * It was 64 (16.4 km), which covered the city and nothing else. An empty cell is ~19.6 kB,
+ * so the canvas costs about 126 MB instead of 80 MB. See mod-src/client/PZWorld_Compat.lua.
  */
-export const CANVAS_CELLS = 64;
+export const CANVAS_CELLS = 80;
 
 /**
  * Default ground. 96 is `$random` / DeepForest in

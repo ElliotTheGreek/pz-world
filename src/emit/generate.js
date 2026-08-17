@@ -25,6 +25,7 @@ import { emitWorld } from './world.js';
 import { writeStreets } from './streets.js';
 import { planParking, writeObjects } from './objects.js';
 import { CELL_SIZE } from '../formats/lotheader.js';
+import { CANVAS_CELLS } from '../../tools/make-canvas.js';
 
 /**
  * Project every feature into world squares, once the bearing is settled.
@@ -66,7 +67,7 @@ function projectAll(features, opts) {
   // that are complete on one side of the boundary and empty on the other, and the empty
   // ones revert to procedural — a visible seam through the middle of a cell rather than
   // at the edge of the map.
-  const canvas = opts.canvasSquares ?? 64 * CELL_SIZE;
+  const canvas = opts.canvasSquares ?? CANVAS_CELLS * CELL_SIZE;
   const pad = Math.max(CELL_SIZE, Math.round((canvas - (maxX - minX)) / 2));
   const originX = opts.originX ?? Math.round(-minX + pad);
   const originY = opts.originY ?? Math.round(-minY + pad);

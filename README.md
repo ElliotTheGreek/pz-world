@@ -230,11 +230,18 @@ rasteriser at eleven bearings, and the map-grouping rules are pinned.
 
 ## World size
 
-The canvas is **64 × 64 cells = 16.4 km square**. For scale, vanilla Knox County
-is 78 × 63 cells (19.9 × 16.1 km), so this is the same order as the whole base
-game and holds a city plus the country around it. Change `CANVAS_CELLS` in
-`tools/make-canvas.js` and `Config.lua` together if you want more; an empty cell
-costs 19.6 kB.
+The canvas is **80 × 80 cells = 20.5 km square**, a little larger than the whole
+of vanilla Knox County (78 × 63 cells, 19.9 × 16.1 km). A city needs far less
+than that; the size is set by mod compatibility rather than by the city.
+
+Many mods hardcode Knox County coordinates — RV Life places its trailer
+interiors at x 16,896–18,176 — and a coordinate outside the canvas has no cell
+at all, so `IsoLot.getHeader` returns null and the mod fails silently. Sizing the
+canvas past Knox County's extent means anything baked in against vanilla still
+lands somewhere real. See `mod-src/client/PZWorld_Compat.lua`.
+
+Change `CANVAS_CELLS` in `tools/make-canvas.js` and `Config.lua` together if you
+want a different size; an empty cell costs 19.6 kB, so the canvas is ~126 MB.
 
 ## Licensing
 

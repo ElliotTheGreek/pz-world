@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { CellBuilder, CellGrid, ZOMBIE_ROOFED, ZOMBIE_DENSE } from '../src/emit/lotpack.js';
+import { CellBuilder, CellGrid, ZOMBIE_ROOFED, ZOMBIE_DENSE, MAX_DECLARED_LEVEL } from '../src/emit/lotpack.js';
 import { encodeChunkData, decodeChunkData, computeChunkBits, BIT_SOLID, BIT_ROOM } from '../src/emit/chunkdata.js';
 import { plantAt, vegetationFields, PLANTABLE, DENSITY_WILD } from '../src/plan/vegetation.js';
 import { toStreets, encodeStreetsXml, escapeXml, MAX_POINTS } from '../src/emit/streets.js';
@@ -154,7 +154,7 @@ test('a basement keeps its tiles and its room, and the cell declares the level',
 
     const cell = readCell(dir, 3, 4);
     assert.equal(cell.header.minLevel, -1, 'the cell must declare the level its basement is on');
-    assert.equal(cell.header.maxLevel, 0, 'and no more than it needs — 3,068 Muldraugh cells are 0..0');
+    assert.equal(cell.header.maxLevel, MAX_DECLARED_LEVEL, 'a cell always declares at least 0..7, for other mods');
     assert.deepEqual(cell.tileNames(2, 2, -1), ['floors_interior_carpet_01_0'], 'the basement floor was dropped');
     assert.ok(cell.square(2, 2, 0), 'the ground floor must survive the level shift');
 
@@ -176,7 +176,7 @@ test('a room below the tiles still widens the cell, so no room floats outside it
   builder.addRoom({ name: 'basement', level: -4, rects: [[0, 0, 2, 2]], objects: [] });
   const cell = builder.finish();
   assert.equal(cell.header.minLevel, -4);
-  assert.equal(cell.header.maxLevel, 0);
+  assert.equal(cell.header.maxLevel, MAX_DECLARED_LEVEL);
 });
 
 test('a partly filled chunk is reported, because the game would silently discard it', () => {

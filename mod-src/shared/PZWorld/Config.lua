@@ -20,7 +20,7 @@ Config.MOD_ID = "pzworld"
 --- a real city plus the country around it — Plattsburgh's built-up area is
 --- roughly 4 × 3 km. There is no cap in the format; cell indices are only
 --- filenames. The cost is disk: an empty cell is 19.6 kB, so 64 × 64 is ~80 MB.
-Config.CANVAS_CELLS = 64
+Config.CANVAS_CELLS = 80
 Config.CELL_SIZE = 256
 Config.WORLD_SQUARES = Config.CANVAS_CELLS * Config.CELL_SIZE
 
