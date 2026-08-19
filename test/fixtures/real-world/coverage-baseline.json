@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+  "fixtureManifestSha256": "2f2bc7b0e257ba352c0d3f8e918ce19cf20d395dd7bfe26ffcfcf7a474e7e470",
+  "fixtureIds": [
+    "urban",
+    "suburban",
+    "rural",
+    "highway",
+    "bridge"
+  ],
+  "supportedFamilyScope": [
+    "blends_natural_01",
+    "blends_street_01",
+    "floors_exterior_tilesandstone_01",
+    "street_curbs_01",
+    "street_curbs_01_diag",
+    "street_curbs_01_diag_2",
+    "street_trafficlines_01"
+  ],
+  "coveredFamilies": [
+    "blends_natural_01",
+    "blends_street_01",
+    "floors_exterior_tilesandstone_01",
+    "street_curbs_01",
+    "street_trafficlines_01"
+  ],
+  "builds": [
+    {
+      "id": "urban",
+      "sourceCache": "overpass-bde2d261.json",
+      "anchorElement": "way/201652035",
+      "payloadSha256": "03c3ac186e1ac99152e2e78dd39020464dcb51942c2ee4eb94f7cfef4f3be338",
+      "sourceElements": 80,
+      "normalized": {
+        "buildings": 51,
+        "roads": 28,
+        "ground": 1,
+        "objects": 0,
+        "pois": 0
+      },
+      "bearing": 2.775,
+      "rendered": {
+        "roads": 28,
+        "squares": 9441,
+        "families": [
+          "blends_street_01",
+          "floors_exterior_tilesandstone_01",
+          "street_curbs_01"
+        ]
+      },
+      "requiredFeatureClasses": [
+        "building",
+        "residential-road",
+        "sidewalk"
+      ],
+      "featureCounts": {
+        "building": 51,
+        "residential-road": 1,
+        "sidewalk": 3117,
+        "rural-road": 1,
+        "highway": 0,
+        "shoulder": 0,
+        "lane-marking": 0,
+        "bridge": 0,
+        "bridge-deck": 0,
+        "bridge-edge": 0
+      },
+      "missingFeatureClasses": [],
+      "invalidOverlaps": {
+        "curbOnCarriageway": 0,
+        "sidewalkOnCarriageway": 0,
+        "ordinaryEdgeOnBridge": 0,
+        "bridgeDeckEdge": 0
+      },
+      "seams": {
+        "crossings": 10,
+        "gaps": 0
+      }
+    },
+    {
+      "id": "suburban",
+      "sourceCache": "overpass-cb0bd519.json",
+      "anchorElement": "way/201652031",
+      "payloadSha256": "1f65565b06578cec91acbd88c2532028d5add6e011a17943616a8ea5cdda419a",
+      "sourceElements": 80,
+      "normalized": {
+        "buildings": 22,
+        "roads": 56,
+        "ground": 2,
+        "objects": 0,
+        "pois": 0
+      },
+      "bearing": 2.7305,
+      "rendered": {
+        "roads": 56,
+        "squares": 9373,
+        "families": [
+          "blends_natural_01",
+          "blends_street_01",
+          "floors_exterior_tilesandstone_01",
+          "street_curbs_01"
+        ]
+      },
+      "requiredFeatureClasses": [
+        "building",
+        "residential-road"
+      ],
+      "featureCounts": {
+        "building": 22,
+        "residential-road": 2,
+        "sidewalk": 4035,
+        "rural-road": 0,
+        "highway": 0,
+        "shoulder": 0,
+        "lane-marking": 0,
+        "bridge": 0,
+        "bridge-deck": 0,
+        "bridge-edge": 0
+      },
+      "missingFeatureClasses": [],
+      "invalidOverlaps": {
+        "curbOnCarriageway": 0,
+        "sidewalkOnCarriageway": 0,
+        "ordinaryEdgeOnBridge": 0,
+        "bridgeDeckEdge": 0
+      },
+      "seams": {
+        "crossings": 7,
+        "gaps": 0
+      }
+    },
+    {
+      "id": "rural",
+      "sourceCache": "overpass-5925b01d.json",
+      "anchorElement": "way/766788213",
+      "payloadSha256": "c26907d33cdc56908dc936a6f75e6bec485f47d26f4be30a74e0f89b49ab03df",
+      "sourceElements": 80,
+      "normalized": {
+        "buildings": 49,
+        "roads": 31,
+        "ground": 0,
+        "objects": 0,
+        "pois": 0
+      },
+      "bearing": 40.291,
+      "rendered": {
+        "roads": 23,
+        "squares": 31267,
+        "families": [
+          "blends_natural_01",
+          "blends_street_01",
+          "street_trafficlines_01"
+        ]
+      },
+      "requiredFeatureClasses": [
+        "rural-road"
+      ],
+      "featureCounts": {
+        "building": 25,
+        "residential-road": 6,
+        "sidewalk": 0,
+        "rural-road": 3,
+        "highway": 0,
+        "shoulder": 0,
+        "lane-marking": 843,
+        "bridge": 0,
+        "bridge-deck": 0,
+        "bridge-edge": 0
+      },
+      "missingFeatureClasses": [],
+      "invalidOverlaps": {
+        "curbOnCarriageway": 0,
+        "sidewalkOnCarriageway": 0,
+        "ordinaryEdgeOnBridge": 0,
+        "bridgeDeckEdge": 0
+      },
+      "seams": {
+        "crossings": 13,
+        "gaps": 0
+      }
+    },
+    {
+      "id": "highway",
+      "sourceCache": "overpass-5925b01d.json",
+      "anchorElement": "way/194109335",
+      "payloadSha256": "d24e750a1791d0e8a603d102112c86a5c0caffc9b08f58b8b9a5a0fc656c9284",
+      "sourceElements": 80,
+      "normalized": {
+        "buildings": 38,
+        "roads": 38,
+        "ground": 4,
+        "objects": 0,
+        "pois": 0
+      },
+      "bearing": 58.9664,
+      "rendered": {
+        "roads": 3,
+        "squares": 34239,
+        "families": [
+          "blends_natural_01",
+          "blends_street_01",
+          "street_trafficlines_01"
+        ]
+      },
+      "requiredFeatureClasses": [
+        "highway",
+        "shoulder",
+        "lane-marking"
+      ],
+      "featureCounts": {
+        "building": 0,
+        "residential-road": 0,
+        "sidewalk": 0,
+        "rural-road": 0,
+        "highway": 2,
+        "shoulder": 1,
+        "lane-marking": 6189,
+        "bridge": 0,
+        "bridge-deck": 0,
+        "bridge-edge": 0
+      },
+      "missingFeatureClasses": [],
+      "invalidOverlaps": {
+        "curbOnCarriageway": 0,
+        "sidewalkOnCarriageway": 0,
+        "ordinaryEdgeOnBridge": 0,
+        "bridgeDeckEdge": 0
+      },
+      "seams": {
+        "crossings": 8,
+        "gaps": 0
+      }
+    },
+    {
+      "id": "bridge",
+      "sourceCache": "overpass-5925b01d.json",
+      "anchorElement": "way/35971084",
+      "payloadSha256": "f0c17cc15c9c8f0ad8a4285dabc93935a5e79434d76629c8d39403e5f3e30b3e",
+      "sourceElements": 80,
+      "normalized": {
+        "buildings": 45,
+        "roads": 34,
+        "ground": 1,
+        "objects": 0,
+        "pois": 0
+      },
+      "bearing": 37.1824,
+      "rendered": {
+        "roads": 24,
+        "squares": 63272,
+        "families": [
+          "blends_natural_01",
+          "blends_street_01",
+          "street_curbs_01",
+          "street_trafficlines_01"
+        ]
+      },
+      "requiredFeatureClasses": [
+        "bridge",
+        "bridge-deck",
+        "bridge-edge"
+      ],
+      "featureCounts": {
+        "building": 19,
+        "residential-road": 2,
+        "sidewalk": 0,
+        "rural-road": 0,
+        "highway": 15,
+        "shoulder": 1,
+        "lane-marking": 10690,
+        "bridge": 4,
+        "bridge-deck": 1356,
+        "bridge-edge": 200
+      },
+      "missingFeatureClasses": [],
+      "invalidOverlaps": {
+        "curbOnCarriageway": 0,
+        "sidewalkOnCarriageway": 0,
+        "ordinaryEdgeOnBridge": 0,
+        "bridgeDeckEdge": 0
+      },
+      "seams": {
+        "crossings": 17,
+        "gaps": 0
+      }
+    }
+  ]
+}

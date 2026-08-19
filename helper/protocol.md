@@ -14,16 +14,15 @@ Zomboid/Lua/
   pzworld_build.txt      the build order: written by the mod, watched by the helper
   pzworld_progress.txt   written during a build, polled every frame by the build screen
   pzworld_settings.txt   the last coordinates entered, so the panel reopens where it was
-
-  pzworld_request.txt    a bare data fetch — written by the mod, watched by the helper
-  pzworld_status.txt     written by the helper while it fetches
-  pzworld_data.txt       written by the helper, read by the mod
 ```
 
-The first three are the live path. The second three are the older *fetch* channel,
-which handed the mod a text payload to build a world from in Lua; that route is
-retired (see `mod-src/server/PZWorld_Server.lua`) and the helper still answers it
-so the protocol does not break, but nothing asks any more.
+Three files, and that is the whole protocol.
+
+There used to be three more — `pzworld_request.txt`, `pzworld_status.txt` and
+`pzworld_data.txt` — a second channel that handed the mod an OSM payload to build
+a world from *in Lua*. That Lua world generator existed alongside this one and
+wrote to the same map directory, so a single click ran two generators over each
+other's output. It is deleted, and the channel with it.
 
 ## Build order — mod → helper, and the progress back
 
@@ -73,79 +72,6 @@ player clicks through.
 Every file is plain text, one `key value` or record per line. Nothing is JSON:
 Kahlua has no JSON parser and hand-rolling one for a multi-megabyte payload
 inside the game would show up as a stall in the middle of world generation.
-
-## Request — mod → helper
-
-```
-version 1
-lat -73.2121
-lon 44.4759
-radius 900
-seed 1873492
-name Burlington
-```
-
-Written last-line-first is not required; the helper waits for `end` so it never
-reads a half-written file.
-
-```
-end
-```
-
-## Status — helper → mod, polled during the fetch
-
-```
-version 1
-stage fetching
-progress 0.35
-message Querying OpenStreetMap
-```
-
-`progress` is 0..1 within the helper's share of the work. The mod owns the
-progress bar and maps this into its own first segment.
-
-An `error` stage carries a human-readable `message` and the mod surfaces it
-rather than hanging.
-
-## Data — helper → mod
-
-The helper does everything that is cheap outside the game and expensive inside
-it: HTTP, JSON parsing, tag classification, projection to local metres, and
-clipping to the requested area. What it deliberately does **not** do is decide
-the world — bearing, snapping, prototype choice and rasterisation all happen in
-Lua, because that is the part the player watches being built.
-
-Coordinates are **metres east and north of the requested centre**, before any
-world rotation, to one decimal place.
-
-```
-version 1
-status ok
-center -73.2121 44.4759
-radius 900
-count 2523 2004 230
-
-R residential 7 12
--412.5,88.1 -400.2,88.0 ...
-
-B house 1 5
--120.4,55.2 -110.1,55.0 -110.0,44.8 -120.3,45.0 -120.4,55.2
-
-G 115 4
--500,-500 500,-500 500,500 -500,500
-
-end
-```
-
-- `R <class> <widthSquares> <pointCount>` then one line of `x,y` points.
-- `B <class> <levels> <pointCount>` then one line of points, ring closed.
-- `G <biomePixel> <pointCount>` then one line of points, ring closed.
-
-Record header and points are on separate lines so the mod can read a header,
-decide whether it cares, and skip the payload line without parsing it.
-
-`count` is roads, buildings and ground polygons, so the mod can size its
-progress bar before it starts.
 
 ## Why the helper emits the finished world
 

@@ -99,6 +99,12 @@ async function main() {
       cacheDir: path.join(ROOT, 'cache'),
       log,
     });
+    if (result.problems.length) {
+      log(`verification found ${result.problems.length} problem(s):`);
+      for (const problem of result.problems) log(`  ${problem}`);
+    } else {
+      log('verification passed');
+    }
     return result.problems.length ? 1 : 0;
   }
 

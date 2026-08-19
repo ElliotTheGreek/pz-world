@@ -141,6 +141,16 @@ export class TileCanvas {
     return this.squares.get(TileCanvas.key(x, y)) ?? null;
   }
 
+  /** Remove one authored layer without disturbing other content on the square. */
+  delete(x, y, layer) {
+    const key = TileCanvas.key(x, y);
+    const square = this.squares.get(key);
+    if (!square || !(layer in square)) return false;
+    delete square[layer];
+    if (!Object.keys(square).length) this.squares.delete(key);
+    return true;
+  }
+
   has(x, y) {
     return this.squares.has(TileCanvas.key(x, y));
   }

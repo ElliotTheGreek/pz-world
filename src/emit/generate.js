@@ -16,9 +16,10 @@ import path from 'node:path';
 import { Projection, bboxAround } from '../geo/project.js';
 import { dominantBearing, gridAlignment } from '../geo/orient.js';
 import { classifyRoad } from '../plan/roads.js';
-import { classifyFromTags } from '../plan/buildings.js';
-import { groundPixelFor } from '../plan/zones.js';
-import { buildSurfaces, fillPolygon } from '../plan/surfaces.js';
+import { classifyFromTags, enrichBuildingsWithPois } from '../plan/buildings.js';
+import { groundPixelFor, siteTreatmentFor } from '../plan/zones.js';
+import { buildSurfaces } from '../plan/surfaces.js';
+import { planRoadworks } from '../plan/roadworks.js';
 import { placeAuthored, materialise } from '../plan/place.js';
 import { cellSource } from '../extract/building.js';
 import { emitWorld } from './world.js';
@@ -95,22 +96,35 @@ function projectAll(features, opts) {
     return c >= bounds.minX && a <= bounds.maxX && d >= bounds.minY && b <= bounds.maxY;
   };
 
-  // Classify here, from the tags, rather than expecting the caller to have done it.
-  // `normalise()` deliberately keeps the raw tags and decides nothing — leaving this
-  // out meant every footprint fell through to the `unknown` fallback chain and became
-  // a house, and every land-cover polygon had no pixel and painted nothing. Neither
-  // failed; the town was simply 5,014 houses on undifferentiated grass.
+  // Project POIs before classifying buildings. OSM commonly stores the useful
+  // occupancy (`amenity=school`, `shop=supermarket`) on a node inside a generic
+  // `building=yes`; joining after classification silently turns those into houses.
+  const projectedPois = (features.pois ?? [])
+    .map((poi) => ({ ...poi, points: toSquares(poi.points) }))
+    .filter((poi) => touches(poi.points));
+  const projectedBuildings = features.buildings
+    .map((building) => ({ ...building, points: toSquares(building.points) }))
+    .filter((building) => touches(building.points));
+  const enriched = enrichBuildingsWithPois(projectedBuildings, projectedPois);
+
+  // Classify here, from the enriched tags, rather than expecting the caller to have
+  // done it. Complete structures are resolved through `building.prefab` in the
+  // semantic registry by classifyFromTags, so OSM and the extracted library share one
+  // declared vocabulary instead of parallel switch statements.
   return {
     bearing,
     alignment: { before, after },
     proj,
     bounds,
-    buildings: features.buildings
-      .map((b) => {
-        const points = toSquares(b.points);
-        return { ...b, points, cls: b.cls ?? classifyFromTags(b.tags, polygonArea(points)) };
-      })
-      .filter((b) => touches(b.points)),
+    buildings: enriched.buildings.map((building) => ({
+      ...building,
+      cls: classifyFromTags(
+        building.tags,
+        polygonArea(building.points),
+        undefined,
+        opts.semanticRegistry,
+      ),
+    })),
     roads: features.roads
       .map((r) => {
         const spec = classifyRoad(r);
@@ -118,15 +132,35 @@ function projectAll(features, opts) {
           ...r,
           points: toSquares(r.points),
           cls: r.cls ?? spec?.cls ?? null,
-          // Carried so the parking planner can tuck a car against the kerb rather
-          // than guess at a carriageway width.
+          // Carried so later road, parking, marking, and furniture passes consume
+          // one derivation rather than independently guessing from sparse tags.
           width: r.width ?? spec?.width ?? null,
+          crossSection: r.crossSection ?? spec ?? null,
         };
       })
       .filter((r) => r.cls && touches(r.points)),
     ground: features.ground
-      .map((g) => ({ ...g, points: toSquares(g.points), pixel: g.pixel ?? groundPixelFor(g.tags) }))
-      .filter((g) => g.pixel !== null && touches(g.points)),
+      .map((ground) => {
+        const treatment = siteTreatmentFor(ground.tags, opts.semanticRegistry);
+        return {
+          ...ground,
+          points: toSquares(ground.points),
+          pixel: ground.pixel ?? treatment?.pixel ?? groundPixelFor(ground.tags),
+          treatment,
+        };
+      })
+      // Keep currently unmapped semantics in the plan. Surface writers already
+      // skip unknown pixels, while later mapping rules still need the source tag.
+      .filter((ground) => touches(ground.points)),
+    objects: (features.objects ?? [])
+      .map((object) => ({ ...object, points: toSquares(object.points) }))
+      .filter((object) => touches(object.points)),
+    // Claimed POIs are represented by their enriched building; unclaimed POIs stay
+    // available to site/furniture passes without being emitted a second time.
+    pois: projectedPois.map((poi) => ({
+      ...poi,
+      claimedByBuilding: !enriched.unclaimedPois.some((candidate) => candidate.fid === poi.fid),
+    })),
   };
 }
 
@@ -164,26 +198,53 @@ export function generateWorld(features, opts) {
     { bounds: projected.bounds, seed: opts.seed, log },
   );
 
-  // ---- surfaces ----------------------------------------------------------
+  // ---- roads -------------------------------------------------------------
   // Built-up is decided by where the buildings actually landed, not by what a
-  // land-use polygon claims: a town is where the houses are.
-  onProgress({ stage: 'surfaces', progress: 0.25, message: 'Laying roads, pavements and ground' });
+  // land-use polygon claims: a town is where the houses are. Roads are rendered
+  // in full — kerbs, pavements, lane lines, junctions, signs — before the
+  // surface grid is built, because the surface grid is derived from what the
+  // renderer actually painted rather than from a second guess at the same ways.
+  onProgress({ stage: 'surfaces', progress: 0.22, message: 'Laying roads, kerbs and pavements' });
   const builtUp = builtUpMask(placements);
+  const roadworks = planRoadworks({
+    roads: projected.roads,
+    objects: projected.objects,
+    placements,
+    bounds: projected.bounds,
+    builtUp,
+    semanticRegistry: opts.semanticRegistry,
+    log,
+    // 0.22 to 0.26 is minutes of work on a city. Reporting inside it is the
+    // difference between a build screen that is working and one that looks dead.
+    onProgress: (fraction, total, what) => onProgress({
+      stage: 'surfaces',
+      progress: 0.22 + 0.04 * fraction,
+      message: what ?? `Laying roads, kerbs and pavements  (${Math.round(fraction * total)} of ${total})`,
+    }),
+  });
+
+  // ---- surfaces ----------------------------------------------------------
+  onProgress({ stage: 'surfaces', progress: 0.26, message: 'Deciding what every square is made of' });
   const surfaces = buildSurfaces(
     {
       meta: { bounds: projected.bounds },
       roads: { ways: projected.roads },
       ground: { polygons: projected.ground.map((g) => ({ ...g, area: polygonArea(g.points) })) },
+      buildings: placements,
       builtUp,
+      roadworks,
     },
-    { log },
+    {
+      log,
+      seed: String(opts.seed ?? ''),
+      semanticRegistry: opts.semanticRegistry,
+      onProgress: (fraction) => onProgress({
+        stage: 'surfaces',
+        progress: 0.26 + 0.04 * fraction,
+        message: `Deciding what every square is made of  (${Math.round(fraction * 100)}%)`,
+      }),
+    },
   );
-
-  // Car parks are paved *and* stand where the planner says, so they are painted
-  // after the roads rather than with the other land cover.
-  for (const g of projected.ground) {
-    if (g.pixel === 200) fillPolygon(surfaces, g.points, 'road');
-  }
 
   // ---- read, rotate, write ----------------------------------------------
   log(`reading ${placements.length} buildings from the install`);
@@ -199,6 +260,7 @@ export function generateWorld(features, opts) {
 
   const emitted = emitWorld({
     surfaces,
+    roadworks,
     buildings: built,
     catalogue: opts.catalogue,
     mapDir: opts.mapDir,
@@ -206,6 +268,7 @@ export function generateWorld(features, opts) {
     onProgress,
     builtUp,
     seed: String(opts.seed ?? ''),
+    semanticRegistry: opts.semanticRegistry,
   });
 
   // ---- street names ------------------------------------------------------
@@ -233,7 +296,24 @@ export function generateWorld(features, opts) {
     placements: built,
     roads: projected.roads,
     cover: projected.ground,
-    stats: { ...placeStats, ...emitted, streets: streets.written, stalls: stalls.length },
+    objects: projected.objects,
+    pois: projected.pois,
+    sourceFeatures: {
+      buildings: projected.buildings,
+      roads: projected.roads,
+      ground: projected.ground,
+      objects: projected.objects,
+      pois: projected.pois,
+    },
+    intersections: roadworks.intersections,
+    roadside: roadworks.roadside.placements,
+    stats: {
+      ...placeStats,
+      ...emitted,
+      roads: roadworks.stats,
+      streets: streets.written,
+      stalls: stalls.length,
+    },
   };
 }
 

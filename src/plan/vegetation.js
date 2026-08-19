@@ -27,40 +27,19 @@
 
 import { hashString } from '../lib/rng.js';
 import { Noise } from '../lib/noise.js';
+import { terrainFields } from './terrain-fields.js';
+import { loadSemanticRegistry, resolveSemantic } from '../catalogue/semantic-registry.js';
 
 /**
- * What vanilla actually plants on grass, and how often.
- *
- * Counts are from the same 500-cell sample. The four `vegetation_trees_01` tiles are
- * within 2% of each other and together with `jumbo_tree_01_0` account for 82% of
- * everything planted; the rest is undergrowth.
+ * What vanilla actually plants on grass, and how often. The asset choices and measured
+ * weights live in the semantic registry; this export remains for measurement/tests.
  */
-export const VEGETATION = [
-  { tile: 'vegetation_trees_01_8', weight: 143335 },
-  { tile: 'vegetation_trees_01_9', weight: 142768 },
-  { tile: 'vegetation_trees_01_10', weight: 140707 },
-  { tile: 'vegetation_trees_01_11', weight: 140489 },
-  { tile: 'jumbo_tree_01_0', weight: 126123 },
-  { tile: 'vegetation_groundcover_01_19', weight: 7562 },
-  { tile: 'vegetation_groundcover_01_23', weight: 7404 },
-  { tile: 'vegetation_groundcover_01_18', weight: 7360 },
-  { tile: 'vegetation_groundcover_01_21', weight: 7282 },
-  { tile: 'vegetation_groundcover_01_22', weight: 6855 },
-  { tile: 'vegetation_foliage_01_10', weight: 6825 },
-  { tile: 'vegetation_foliage_01_9', weight: 6761 },
-  { tile: 'vegetation_foliage_01_14', weight: 6733 },
-  { tile: 'vegetation_foliage_01_13', weight: 6698 },
-  { tile: 'vegetation_foliage_01_12', weight: 6682 },
-  { tile: 'vegetation_foliage_01_8', weight: 6628 },
-  { tile: 'vegetation_foliage_01_11', weight: 6567 },
-  { tile: 'vegetation_farm_01_38', weight: 5514 },
-  { tile: 'vegetation_farm_01_36', weight: 5375 },
-  { tile: 'vegetation_farm_01_33', weight: 5284 },
-  { tile: 'vegetation_farm_01_44', weight: 5071 },
-  { tile: 'vegetation_farm_01_43', weight: 5058 },
-  { tile: 'vegetation_farm_01_42', weight: 5024 },
-  { tile: 'vegetation_farm_01_32', weight: 4964 },
-];
+const SEMANTIC_REGISTRY = loadSemanticRegistry();
+export const VEGETATION = resolveSemantic(
+  SEMANTIC_REGISTRY,
+  'procedural.vegetation',
+  { biome: 'wild' },
+).variants.map(({ tile, weight }) => ({ tile, weight }));
 
 /**
  * Share of grass squares that carry something.
@@ -78,7 +57,7 @@ export const DENSITY_TOWN = 0.185 * THINNING;
 export const DENSITY_WILD = 0.281 * THINNING;
 
 /** Surfaces that may be planted. Tarmac and pavement are not among them. */
-export const PLANTABLE = new Set(['grass', 'grassLight', 'meadow']);
+export const PLANTABLE = new Set(['grass', 'grassLight', 'meadow', 'dirtGrass']);
 
 /**
  * How big a stand of trees is, in squares, and how big an outcrop is.
@@ -102,7 +81,7 @@ export const OUTCROP_SCALE = 45;
  * The clip is symmetric, so the mean stays at 0.5 and the total number of trees is still
  * the measured one. `test/emit.test.js` asserts both halves of that.
  */
-export const STAND_CONTRAST = 3;
+export const STAND_CONTRAST = 4;
 
 const shape = (n) => {
   const v = (n - 0.5) * STAND_CONTRAST + 0.5;
@@ -124,26 +103,43 @@ const shape = (n) => {
 export const ROCK_RATE = 0.006;
 export const RIDGE_THRESHOLD = 0.72;
 
-/** Boulder tiles, weighted as the shipped maps use them. */
-export const BOULDERS = [
-  'boulders_44', 'boulders_47', 'boulders_54', 'boulders_41', 'boulders_46',
-  'boulders_42', 'boulders_48', 'boulders_52', 'boulders_43', 'boulders_45',
-  'boulders_40', 'boulders_9',
-];
+/** Loose boulder objects validated for a ridgeline/outcrop placement context. */
+export const BOULDERS = resolveSemantic(
+  SEMANTIC_REGISTRY,
+  'procedural.rock',
+  { topology: 'ridge' },
+).variants.map(({ tile }) => tile);
 
-const TOTAL_WEIGHT = VEGETATION.reduce((s, v) => s + v.weight, 0);
-
-/** Build a cumulative table once, so choosing is a binary search rather than a scan. */
-function cumulative() {
-  const out = [];
-  let acc = 0;
-  for (const v of VEGETATION) {
-    acc += v.weight;
-    out.push({ tile: v.tile, upTo: acc });
+/** Build a deterministic weighted pool after installation compatibility filtering. */
+export function createPlantPool(vegetation = VEGETATION, boulders = BOULDERS) {
+  const cumulative = [];
+  let totalWeight = 0;
+  for (const variant of vegetation) {
+    totalWeight += variant.weight;
+    cumulative.push({ tile: variant.tile, upTo: totalWeight });
   }
-  return out;
+  return { cumulative, totalWeight, boulders: [...boulders] };
 }
-const CUMULATIVE = cumulative();
+
+const isTree = ({ tile }) => tile.startsWith('vegetation_trees_') || tile.startsWith('jumbo_tree_');
+const isLowFoliage = ({ tile }) => tile.startsWith('vegetation_groundcover_') || tile.startsWith('vegetation_foliage_');
+
+/**
+ * Contextual pools retain the measured per-asset weights while enforcing semantics.
+ * Parks and managed lots use low foliage plus a thinned share of trees; wilderness uses
+ * the complete observed distribution. Farmland deliberately has no pool: future crop
+ * rows own those squares, so generic woodland must not pre-empt them.
+ */
+export const PLANT_POOLS = {
+  wild: createPlantPool(VEGETATION, BOULDERS),
+  town: createPlantPool(VEGETATION.filter((variant) => !variant.tile.startsWith('vegetation_farm_')), []),
+  managed: createPlantPool([
+    ...VEGETATION.filter(isLowFoliage),
+    ...VEGETATION.filter(isTree).map((variant) => ({ ...variant, weight: Math.max(1, Math.round(variant.weight * 0.08)) })),
+  ], []),
+};
+
+const DEFAULT_POOL = PLANT_POOLS.wild;
 
 /**
  * The two noise fields a world is planted from.
@@ -151,10 +147,10 @@ const CUMULATIVE = cumulative();
  * Built once per build and handed to `plantAt`, because a `Noise` carries a 512-byte
  * permutation table and this is called 30 million times.
  */
-export function vegetationFields(seed = '') {
+export function vegetationFields(seed = '', terrain = terrainFields(seed)) {
   return {
-    stands: new Noise(`trees:${seed}`),
-    outcrops: new Noise(`rocks:${seed}`),
+    stands: terrain.view('vegetation'),
+    outcrops: new Noise(`terrain:outcrops:${seed}`),
   };
 }
 
@@ -176,15 +172,17 @@ export function vegetationFields(seed = '') {
  * @param {{stands: Noise, outcrops: Noise}} fields from {@link vegetationFields}
  * @returns {string|null} a tile name, or null for bare grass
  */
-export function plantAt(x, y, density, seed = '', fields = null) {
+export function plantAt(x, y, density, seed = '', fields = null, pool = DEFAULT_POOL) {
   const f = fields ?? vegetationFields(seed);
 
   // Rock first: an outcrop wins the square it is on. Crests of the ridged field only,
   // so boulders run in lines the way real exposed rock does.
   if (f.outcrops.ridged(x, y, OUTCROP_SCALE) > RIDGE_THRESHOLD) {
     const rockRoll = hashString(`rock:${seed}:${x},${y}`) % 100000;
-    if (rockRoll < Math.round(ROCK_RATE * 100000)) {
-      return BOULDERS[hashString(`rockpick:${seed}:${x},${y}`) % BOULDERS.length];
+    if (rockRoll < Math.round(ROCK_RATE * 100000) && pool.boulders.length) {
+      return pool.boulders[
+        hashString(`rockpick:${seed}:${x},${y}`) % pool.boulders.length
+      ];
     }
   }
 
@@ -193,11 +191,11 @@ export function plantAt(x, y, density, seed = '', fields = null) {
   // Two independent draws: whether to plant, and what. Reusing one hash for both
   // correlates the species with the gaps and lays the wood out in visible stripes.
   const roll = hashString(`veg:${seed}:${x},${y}`) % 10000;
-  if (roll >= Math.round(local * 10000)) return null;
+  if (roll >= Math.round(local * 10000) || !pool.totalWeight) return null;
 
-  const pick = hashString(`plant:${seed}:${x},${y}`) % TOTAL_WEIGHT;
-  for (const entry of CUMULATIVE) {
+  const pick = hashString(`plant:${seed}:${x},${y}`) % pool.totalWeight;
+  for (const entry of pool.cumulative) {
     if (pick < entry.upTo) return entry.tile;
   }
-  return CUMULATIVE[CUMULATIVE.length - 1].tile;
+  return pool.cumulative[pool.cumulative.length - 1].tile;
 }

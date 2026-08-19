@@ -16,6 +16,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 import {
@@ -23,6 +24,8 @@ import {
   encodeWorldMapBin,
   parseWorldMapXml,
   compileWorldMapXml,
+  encodeWorldMapXml,
+  assertXmlMatchesBin,
   CELL_SIZE,
 } from '../src/formats/worldmap.js';
 import { findInstall } from '../src/lib/pzinstall.js';
@@ -193,4 +196,185 @@ test('a cell outside the declared grid is refused, not dropped', () => {
     ],
   };
   assert.throws(() => encodeWorldMapBin(doc), /fall outside/);
+});
+
+/**
+ * The blank-map failure, from both ends.
+ *
+ * A blank in-game map has been reported twice against builds whose cells were
+ * perfectly good. Both times the map file next to them held no features, and
+ * nothing anywhere said so: the build logged what it had written rather than
+ * what was on disk, and `WorldMapDataAssetManager` loads an empty `.bin` without
+ * complaint and simply draws nothing. These two pin the checks that turn that
+ * into a message.
+ */
+test('a mod whose map data is empty is reported rather than passing quietly', async () => {
+  const { verifyMod } = await import('../src/verify.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pzworld-blankmap-'));
+  try {
+    const mapDir = path.join(dir, 'common/media/maps/PZWorld');
+    fs.mkdirSync(mapDir, { recursive: true });
+    fs.mkdirSync(path.join(dir, '42'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '42/mod.info'), 'name=x\nid=x\n');
+    fs.writeFileSync(path.join(mapDir, 'map.info'), 'title=PZWorld\n');
+    fs.writeFileSync(path.join(mapDir, 'spawnpoints.lua'), 'function SpawnPoints() return {} end\n');
+    fs.writeFileSync(path.join(mapDir, 'worldmap.xml'), '<world/>\n');
+    // Exactly what an 80x80 canvas with nothing built on it encodes to, which is
+    // the file that turned up beside a finished city.
+    fs.writeFileSync(
+      path.join(mapDir, 'worldmap.xml.bin'),
+      encodeWorldMapBin({ width: 80, height: 80, originX: 0, originY: 0, cells: [] }),
+    );
+
+    const { problems } = verifyMod(dir);
+    assert.ok(problems.some((p) => /worldmap\.xml\.bin has no features/.test(p)),
+      `an empty map was not reported: ${problems.join('; ')}`);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the name both map screens look up is reported when it goes missing', async () => {
+  const { verifyMod } = await import('../src/verify.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pzworld-noname-'));
+  try {
+    const mapDir = path.join(dir, 'common/media/maps/PZWorld');
+    fs.mkdirSync(mapDir, { recursive: true });
+    fs.mkdirSync(path.join(dir, '42'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '42/mod.info'), 'name=x\nid=x\n');
+    fs.writeFileSync(path.join(mapDir, 'map.info'), 'title=PZWorld\n');
+    fs.writeFileSync(path.join(mapDir, 'spawnpoints.lua'), 'function SpawnPoints() return {} end\n');
+    // A perfectly good `.bin` and no `worldmap.xml`: `ZomboidFileSystem` builds
+    // `activeFileMap` at mod-scan time, so with no name to find neither screen
+    // ever asks for the data, however good it is.
+    fs.writeFileSync(
+      path.join(mapDir, 'worldmap.xml.bin'),
+      encodeWorldMapBin({
+        width: 2, height: 2, originX: 0, originY: 0,
+        cells: [{ x: 0, y: 0, features: [{ type: 'Polygon', rings: [[0, 0, 8, 0, 8, 8, 0, 8]], properties: [['building', 'yes']] }] }],
+      }),
+    );
+
+    const { problems } = verifyMod(dir);
+    assert.ok(problems.some((p) => /worldmap\.xml is missing/.test(p)),
+      `a missing map name was not reported: ${problems.join('; ')}`);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/**
+ * The XML and the binary beside it are the same map.
+ *
+ * The helper watches `worldmap.xml` and recompiles `worldmap.xml.bin` from it on
+ * any change (`helper/serve.js compileMapIfChanged`), forcing the canvas
+ * geometry as it goes. That makes the XML the real source of truth on disk
+ * whatever the authored build wrote, and a build that leaves a *stub* there has
+ * quietly replaced its own map with an empty one. These pin the round trip that
+ * makes the two writers agree.
+ */
+test('the authored map survives being recompiled by the helper, byte for byte', () => {
+  const doc = {
+    width: 80,
+    height: 80,
+    originX: 0,
+    originY: 0,
+    cells: [
+      { x: 29, y: 31, features: [
+        { type: 'Polygon', rings: [[10, 10, 22, 10, 22, 20, 10, 20]], properties: [['building', 'Residential']] },
+        { type: 'Polygon', rings: [[0, 40, 200, 40, 200, 46, 0, 46]], properties: [['highway', 'secondary']] },
+      ] },
+      { x: 50, y: 29, features: [
+        { type: 'Polygon', rings: [[4, 4, 120, 8, 90, 200, 2, 150]], properties: [['natural', 'forest']] },
+      ] },
+    ],
+  };
+
+  const bin = encodeWorldMapBin(doc);
+  const xml = encodeWorldMapXml(doc);
+  // Exactly what the helper does, geometry and all.
+  assertXmlMatchesBin(xml, bin, { width: 80, height: 80 });
+
+  const back = parseWorldMapXml(xml, { width: 80, height: 80 });
+  assert.equal(back.cells.length, doc.cells.length);
+  assert.deepEqual(back.cells.map((c) => [c.x, c.y]), doc.cells.map((c) => [c.x, c.y]));
+  assert.deepEqual(back.cells[0].features[0].rings, doc.cells[0].features[0].rings);
+  assert.deepEqual(back.cells[0].features[0].properties, doc.cells[0].features[0].properties);
+});
+
+test('a property the XML reader could not decode is refused at the write', () => {
+  const doc = {
+    width: 4, height: 4, originX: 0, originY: 0,
+    cells: [{ x: 1, y: 1, features: [
+      { type: 'Polygon', rings: [[0, 0, 4, 0, 4, 4]], properties: [['building', 'Bob\'s "Diner" & Bar']] },
+    ] }],
+  };
+  // `parseWorldMapXml` does no entity decoding, so a value carrying a quote
+  // would read back as something else — or truncate the attribute and take the
+  // rest of the file with it. Better to fail the build than to ship that.
+  assert.throws(() => encodeWorldMapXml(doc), /does not decode/);
+});
+
+test('a mismatch between the xml and the bin is caught rather than shipped', () => {
+  const real = {
+    width: 8, height: 8, originX: 0, originY: 0,
+    cells: [{ x: 2, y: 2, features: [
+      { type: 'Polygon', rings: [[0, 0, 8, 0, 8, 8, 0, 8]], properties: [['building', 'yes']] },
+    ] }],
+  };
+  const bin = encodeWorldMapBin(real);
+  // The exact failure that shipped: a real binary with a stub beside it.
+  const stub = '<?xml version="1.0" encoding="UTF-8"?>\r\n<world version="1.0">\r\n</world>\r\n';
+  assert.throws(
+    () => assertXmlMatchesBin(stub, bin, { width: 8, height: 8 }),
+    /does not compile to the bytes/,
+  );
+});
+
+/**
+ * The helper's own compiler, run over an authored map.
+ *
+ * The two blank-map reports both came down to this one interaction, and neither
+ * unit test above would have caught it, because the damage happens in another
+ * package: `helper/serve.js` watches `worldmap.xml` and rebuilds
+ * `worldmap.xml.bin` from it whenever it changes. So this imports the real
+ * function and runs it against a real pair of files. If the authored build ever
+ * writes an XML that does not compile back to its own binary, this fails here
+ * rather than in front of a player with a blank map.
+ */
+test('the helper recompiling an authored map reproduces it byte for byte', async () => {
+  const { compileMapIfChanged } = await import('../helper/serve.js');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pzworld-helper-'));
+  try {
+    const mapDir = path.join(root, 'mods', 'pzworld', 'common/media/maps/PZWorld');
+    fs.mkdirSync(mapDir, { recursive: true });
+
+    const doc = {
+      width: 80, height: 80, originX: 0, originY: 0,
+      cells: [
+        { x: 31, y: 44, features: [
+          { type: 'Polygon', rings: [[3, 3, 19, 3, 19, 15, 3, 15]], properties: [['building', 'Residential']] },
+          { type: 'Polygon', rings: [[0, 60, 255, 60, 255, 68, 0, 68]], properties: [['highway', 'primary']] },
+        ] },
+        { x: 44, y: 31, features: [
+          { type: 'Polygon', rings: [[8, 8, 200, 12, 180, 240, 4, 200]], properties: [['natural', 'forest']] },
+        ] },
+      ],
+    };
+    const bin = encodeWorldMapBin(doc);
+    fs.writeFileSync(path.join(mapDir, 'worldmap.xml'), encodeWorldMapXml(doc), 'utf8');
+    fs.writeFileSync(path.join(mapDir, 'worldmap.xml.bin'), bin);
+
+    // A fresh state is what the helper has when it starts beside a world built
+    // while it was not running — the case that overwrote a finished city.
+    const compiled = compileMapIfChanged({ mapStamp: null }, { userFolder: root });
+    assert.equal(compiled, true, 'the helper did not compile the map at all');
+    assert.deepEqual(
+      fs.readFileSync(path.join(mapDir, 'worldmap.xml.bin')),
+      bin,
+      'the helper rewrote the map into something else',
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });

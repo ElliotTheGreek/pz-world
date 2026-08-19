@@ -29,6 +29,7 @@ import { rotate } from '../prefab/schematic.js';
 import { snapFootprint } from '../geo/orient.js';
 import { loadBuildingClasses } from '../prefab/classify.js';
 import { buildStarterLibrary } from '../prefab/starter.js';
+import { loadSemanticRegistry, resolveSemantic } from '../catalogue/semantic-registry.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OSM_TAGS = path.resolve(HERE, '../../config/osm-tags.jsonc');
@@ -49,15 +50,92 @@ export function loadTagTable(file = OSM_TAGS) {
  * is why the area fallback is not an edge case here any more than the storey
  * fallback is in Terrula's FEMA ingest.
  */
-export function classifyFromTags(tags, areaSquares, table = loadTagTable()) {
+export function classifyFromTags(
+  tags,
+  areaSquares,
+  table = loadTagTable(),
+  registry = loadSemanticRegistry(),
+) {
+  let osmClass = null;
   for (const rule of table.buildings) {
     const value = tags[rule.tag];
     if (value === undefined) continue;
-    if (rule.value === '*' || rule.value === value) return rule.class;
+    if (rule.value === '*' || rule.value === value) {
+      osmClass = rule.class;
+      break;
+    }
   }
-  const classes = loadBuildingClasses();
-  const bySize = classes.areaFallback.find((r) => areaSquares <= r.maxArea);
-  return bySize?.class ?? classes.fallback;
+  if (!osmClass) {
+    const classes = loadBuildingClasses();
+    const bySize = classes.areaFallback.find((r) => areaSquares <= r.maxArea);
+    osmClass = bySize?.class ?? classes.fallback;
+  }
+  const mapping = resolveSemantic(registry, 'building.prefab', { osmClass });
+  return mapping?.prefabClass ?? osmClass;
+}
+
+/**
+ * Attach separately mapped OSM amenities to the footprint that contains them.
+ * OSM commonly puts `amenity=school` or `shop=supermarket` on a node inside a
+ * generic `building=yes`; without this join the strongest occupancy signal is
+ * silently lost and the footprint falls back to its area.
+ */
+export function enrichBuildingsWithPois(buildings, pois, { maxDistance = 12 } = {}) {
+  const enriched = buildings.map((building) => ({ ...building, tags: { ...building.tags } }));
+  const claimed = new Set();
+
+  for (const poi of pois ?? []) {
+    const point = poiAnchor(poi.points);
+    if (!point) continue;
+    let best = null;
+    let bestDistance = Infinity;
+    for (let i = 0; i < enriched.length; i++) {
+      const building = enriched[i];
+      const inside = pointInPolygon(point, building.points);
+      const distance = inside ? 0 : distanceToBounds(point, building.points);
+      if (distance < bestDistance) {
+        best = i;
+        bestDistance = distance;
+      }
+    }
+    if (best === null || bestDistance > maxDistance) continue;
+    // Building tags win only where they are equally specific. POI classification
+    // tags intentionally override a generic value attached to the footprint.
+    enriched[best].tags = { ...enriched[best].tags, ...poi.tags };
+    enriched[best].poiFids = [...(enriched[best].poiFids ?? []), poi.fid];
+    claimed.add(poi.fid);
+  }
+  return { buildings: enriched, unclaimedPois: (pois ?? []).filter((poi) => !claimed.has(poi.fid)) };
+}
+
+function poiAnchor(points = []) {
+  if (!points.length) return null;
+  if (points.length === 1) return points[0];
+  let x = 0;
+  let y = 0;
+  for (const point of points) {
+    x += point[0];
+    y += point[1];
+  }
+  return [x / points.length, y / points.length];
+}
+
+function pointInPolygon([x, y], points) {
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const [xi, yi] = points[i];
+    const [xj, yj] = points[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function distanceToBounds([x, y], points) {
+  const xs = points.map((point) => point[0]);
+  const ys = points.map((point) => point[1]);
+  const dx = Math.max(Math.min(...xs) - x, 0, x - Math.max(...xs));
+  const dy = Math.max(Math.min(...ys) - y, 0, y - Math.max(...ys));
+  return Math.hypot(dx, dy);
 }
 
 /**

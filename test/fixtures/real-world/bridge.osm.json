@@ -1,0 +1,4781 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-08-16T15:57:19Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "fixture": {
+    "id": "bridge",
+    "sourceCache": "overpass-5925b01d.json",
+    "anchorElement": "way/35971084",
+    "requiredFeatureClasses": [
+      "bridge",
+      "bridge-deck",
+      "bridge-edge"
+    ]
+  },
+  "elements": [
+    {
+      "type": "way",
+      "id": 35971084,
+      "bounds": {
+        "minlat": 44.7169826,
+        "minlon": -73.4591467,
+        "maxlat": 44.7174492,
+        "maxlon": -73.4582966
+      },
+      "nodes": [
+        420445017,
+        211899725,
+        211856317,
+        420445013
+      ],
+      "geometry": [
+        {
+          "lat": 44.7174492,
+          "lon": -73.4582966
+        },
+        {
+          "lat": 44.7172263,
+          "lon": -73.4587151
+        },
+        {
+          "lat": 44.717181,
+          "lon": -73.458799
+        },
+        {
+          "lat": 44.7169826,
+          "lon": -73.4591467
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "foot": "no",
+        "hgv": "designated",
+        "highway": "motorway",
+        "horse": "no",
+        "lanes": "2",
+        "layer": "1",
+        "level": "1",
+        "maxspeed": "65 mph",
+        "name": "Adirondack Northway",
+        "oneway": "yes",
+        "ref": "I 87",
+        "surface": "asphalt",
+        "tiger:cfcc": "A15",
+        "tiger:county": "Clinton, NY:Essex, NY",
+        "tiger:name_base": "I-87",
+        "tiger:name_base_1": "Adirondack Northway"
+      }
+    },
+    {
+      "type": "way",
+      "id": 35971087,
+      "bounds": {
+        "minlat": 44.7167705,
+        "minlon": -73.4590466,
+        "maxlat": 44.7172201,
+        "maxlon": -73.4581914
+      },
+      "nodes": [
+        420445014,
+        211837054,
+        211898632,
+        420445016
+      ],
+      "geometry": [
+        {
+          "lat": 44.7167705,
+          "lon": -73.4590466
+        },
+        {
+          "lat": 44.716959,
+          "lon": -73.458682
+        },
+        {
+          "lat": 44.7169996,
+          "lon": -73.4586061
+        },
+        {
+          "lat": 44.7172201,
+          "lon": -73.4581914
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "foot": "no",
+        "hgv": "designated",
+        "highway": "motorway",
+        "horse": "no",
+        "lanes": "2",
+        "layer": "1",
+        "level": "1",
+        "maxspeed": "65 mph",
+        "name": "Adirondack Northway",
+        "oneway": "yes",
+        "ref": "I 87",
+        "surface": "asphalt",
+        "tiger:cfcc": "A15",
+        "tiger:county": "Clinton, NY:Essex, NY",
+        "tiger:name_base": "I-87",
+        "tiger:name_base_1": "Adirondack Northway"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20059623,
+      "bounds": {
+        "minlat": 44.7170216,
+        "minlon": -73.459167,
+        "maxlat": 44.717181,
+        "maxlon": -73.458799
+      },
+      "nodes": [
+        211856317,
+        420445012
+      ],
+      "geometry": [
+        {
+          "lat": 44.717181,
+          "lon": -73.458799
+        },
+        {
+          "lat": 44.7170216,
+          "lon": -73.459167
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "destination": "Dannemora;Saranac Lake",
+        "destination:ref": "NY 22 North;NY 374 West",
+        "highway": "motorway_link",
+        "layer": "1",
+        "level": "1",
+        "oneway": "yes",
+        "tiger:cfcc": "A63",
+        "tiger:county": "Clinton, NY"
+      }
+    },
+    {
+      "type": "way",
+      "id": 35971083,
+      "bounds": {
+        "minlat": 44.7167281,
+        "minlon": -73.4590211,
+        "maxlat": 44.716959,
+        "maxlon": -73.458682
+      },
+      "nodes": [
+        420445015,
+        211837057,
+        211837054
+      ],
+      "geometry": [
+        {
+          "lat": 44.7167281,
+          "lon": -73.4590211
+        },
+        {
+          "lat": 44.716791,
+          "lon": -73.458919
+        },
+        {
+          "lat": 44.716959,
+          "lon": -73.458682
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "motorway_link",
+        "layer": "1",
+        "level": "1",
+        "oneway": "yes",
+        "tiger:cfcc": "A63",
+        "tiger:county": "Clinton, NY",
+        "tiger:source": "tiger_import_dch_v0.6_20070829",
+        "tiger:tlid": "136069638:136084066:136097555",
+        "tiger:upload_uuid": "bulk_upload.pl-9008b238-e3f5-42a0-9a79-3f30b43b5bca"
+      }
+    },
+    {
+      "type": "way",
+      "id": 194109336,
+      "bounds": {
+        "minlat": 44.7174492,
+        "minlon": -73.4582966,
+        "maxlat": 44.7183597,
+        "maxlon": -73.4566117
+      },
+      "nodes": [
+        211831850,
+        211899727,
+        420445017
+      ],
+      "geometry": [
+        {
+          "lat": 44.7183597,
+          "lon": -73.4566117
+        },
+        {
+          "lat": 44.71751,
+          "lon": -73.45819
+        },
+        {
+          "lat": 44.7174492,
+          "lon": -73.4582966
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "foot": "no",
+        "hgv": "designated",
+        "highway": "motorway",
+        "horse": "no",
+        "lanes": "2",
+        "maxspeed": "65 mph",
+        "name": "Adirondack Northway",
+        "oneway": "yes",
+        "ref": "I 87",
+        "surface": "asphalt",
+        "tiger:cfcc": "A15",
+        "tiger:county": "Clinton, NY:Essex, NY",
+        "tiger:name_base": "I-87",
+        "tiger:name_base_1": "Adirondack Northway"
+      }
+    },
+    {
+      "type": "way",
+      "id": 35971088,
+      "bounds": {
+        "minlat": 44.7172201,
+        "minlon": -73.4581914,
+        "maxlat": 44.7181659,
+        "maxlon": -73.4563852
+      },
+      "nodes": [
+        420445016,
+        211898629,
+        211831853
+      ],
+      "geometry": [
+        {
+          "lat": 44.7172201,
+          "lon": -73.4581914
+        },
+        {
+          "lat": 44.717263,
+          "lon": -73.458113
+        },
+        {
+          "lat": 44.7181659,
+          "lon": -73.4563852
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "foot": "no",
+        "hgv": "designated",
+        "highway": "motorway",
+        "horse": "no",
+        "lanes": "2",
+        "maxspeed": "65 mph",
+        "name": "Adirondack Northway",
+        "oneway": "yes",
+        "ref": "I 87",
+        "surface": "asphalt",
+        "tiger:cfcc": "A15",
+        "tiger:county": "Clinton, NY:Essex, NY",
+        "tiger:name_base": "I-87",
+        "tiger:name_base_1": "Adirondack Northway"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809723452,
+      "bounds": {
+        "minlat": 44.717468,
+        "minlon": -73.461346,
+        "maxlat": 44.71794,
+        "maxlon": -73.459813
+      },
+      "nodes": [
+        7570807274,
+        7570807275,
+        7570807271,
+        7570807272,
+        7570807269,
+        7570807270,
+        7570807267,
+        7570807268,
+        7570807274
+      ],
+      "geometry": [
+        {
+          "lat": 44.717647,
+          "lon": -73.459813
+        },
+        {
+          "lat": 44.71758,
+          "lon": -73.460776
+        },
+        {
+          "lat": 44.717635,
+          "lon": -73.460783
+        },
+        {
+          "lat": 44.717623,
+          "lon": -73.460953
+        },
+        {
+          "lat": 44.717493,
+          "lon": -73.460935
+        },
+        {
+          "lat": 44.717468,
+          "lon": -73.461296
+        },
+        {
+          "lat": 44.717836,
+          "lon": -73.461346
+        },
+        {
+          "lat": 44.71794,
+          "lon": -73.459853
+        },
+        {
+          "lat": 44.717647,
+          "lon": -73.459813
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "112",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Trade Road",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20066292,
+      "bounds": {
+        "minlat": 44.7179602,
+        "minlon": -73.461832,
+        "maxlat": 44.7181368,
+        "maxlon": -73.459462
+      },
+      "nodes": [
+        211957093,
+        211957118,
+        211957121,
+        1532045088
+      ],
+      "geometry": [
+        {
+          "lat": 44.7181368,
+          "lon": -73.459462
+        },
+        {
+          "lat": 44.718135,
+          "lon": -73.459882
+        },
+        {
+          "lat": 44.718051,
+          "lon": -73.460882
+        },
+        {
+          "lat": 44.7179602,
+          "lon": -73.461832
+        }
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Trade Road",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "Trade",
+        "tiger:name_type": "Rd",
+        "tiger:reviewed": "no",
+        "tiger:separated": "no",
+        "tiger:source": "tiger_import_dch_v0.6_20070829",
+        "tiger:tlid": "136070806:136096101",
+        "tiger:upload_uuid": "bulk_upload.pl-9008b238-e3f5-42a0-9a79-3f30b43b5bca"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20057202,
+      "bounds": {
+        "minlat": 44.7181659,
+        "minlon": -73.4566117,
+        "maxlat": 44.7183597,
+        "maxlon": -73.4563852
+      },
+      "nodes": [
+        211831850,
+        211831853
+      ],
+      "geometry": [
+        {
+          "lat": 44.7183597,
+          "lon": -73.4566117
+        },
+        {
+          "lat": 44.7181659,
+          "lon": -73.4563852
+        }
+      ],
+      "tags": {
+        "access": "no",
+        "emergency": "yes",
+        "highway": "service",
+        "service": "emergency_access"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809721912,
+      "bounds": {
+        "minlat": 44.718376,
+        "minlon": -73.461235,
+        "maxlat": 44.718677,
+        "maxlon": -73.460881
+      },
+      "nodes": [
+        7570821387,
+        7570821381,
+        7570821380,
+        7570821384,
+        7570821387
+      ],
+      "geometry": [
+        {
+          "lat": 44.718397,
+          "lon": -73.460881
+        },
+        {
+          "lat": 44.718376,
+          "lon": -73.461198
+        },
+        {
+          "lat": 44.718656,
+          "lon": -73.461235
+        },
+        {
+          "lat": 44.718677,
+          "lon": -73.460918
+        },
+        {
+          "lat": 44.718397,
+          "lon": -73.460881
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "113",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Trade Road",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809720355,
+      "bounds": {
+        "minlat": 44.717475,
+        "minlon": -73.462201,
+        "maxlat": 44.717828,
+        "maxlon": -73.461871
+      },
+      "nodes": [
+        7570818590,
+        7570818591,
+        7570818586,
+        7570818587,
+        7570818588,
+        7570818589,
+        7570818581,
+        7570818583,
+        7570818590
+      ],
+      "geometry": [
+        {
+          "lat": 44.717475,
+          "lon": -73.462151
+        },
+        {
+          "lat": 44.717811,
+          "lon": -73.462201
+        },
+        {
+          "lat": 44.717828,
+          "lon": -73.461965
+        },
+        {
+          "lat": 44.717753,
+          "lon": -73.461954
+        },
+        {
+          "lat": 44.717758,
+          "lon": -73.461885
+        },
+        {
+          "lat": 44.717666,
+          "lon": -73.461871
+        },
+        {
+          "lat": 44.717661,
+          "lon": -73.461935
+        },
+        {
+          "lat": 44.717493,
+          "lon": -73.46191
+        },
+        {
+          "lat": 44.717475,
+          "lon": -73.462151
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "102",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Trade Road",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20057822,
+      "bounds": {
+        "minlat": 44.71088,
+        "minlon": -73.460437,
+        "maxlat": 44.7167281,
+        "maxlon": -73.458631
+      },
+      "nodes": [
+        211837106,
+        211837103,
+        211837100,
+        211837098,
+        211837095,
+        211837092,
+        211837088,
+        211837086,
+        211837084,
+        211837082,
+        211837079,
+        211837076,
+        211837074,
+        211837072,
+        211837069,
+        211837066,
+        211837064,
+        211837063,
+        211837061,
+        211837059,
+        211837058,
+        420445015
+      ],
+      "geometry": [
+        {
+          "lat": 44.71088,
+          "lon": -73.458631
+        },
+        {
+          "lat": 44.711108,
+          "lon": -73.458781
+        },
+        {
+          "lat": 44.711214,
+          "lon": -73.458863
+        },
+        {
+          "lat": 44.712117,
+          "lon": -73.459701
+        },
+        {
+          "lat": 44.71223,
+          "lon": -73.459791
+        },
+        {
+          "lat": 44.712438,
+          "lon": -73.459949
+        },
+        {
+          "lat": 44.712786,
+          "lon": -73.460159
+        },
+        {
+          "lat": 44.712829,
+          "lon": -73.460177
+        },
+        {
+          "lat": 44.71292,
+          "lon": -73.460215
+        },
+        {
+          "lat": 44.71298,
+          "lon": -73.460245
+        },
+        {
+          "lat": 44.713314,
+          "lon": -73.460346
+        },
+        {
+          "lat": 44.713606,
+          "lon": -73.460404
+        },
+        {
+          "lat": 44.71486,
+          "lon": -73.460437
+        },
+        {
+          "lat": 44.715136,
+          "lon": -73.460433
+        },
+        {
+          "lat": 44.715427,
+          "lon": -73.460403
+        },
+        {
+          "lat": 44.715509,
+          "lon": -73.460378
+        },
+        {
+          "lat": 44.715693,
+          "lon": -73.460295
+        },
+        {
+          "lat": 44.715951,
+          "lon": -73.460139
+        },
+        {
+          "lat": 44.716047,
+          "lon": -73.460051
+        },
+        {
+          "lat": 44.716252,
+          "lon": -73.459826
+        },
+        {
+          "lat": 44.716383,
+          "lon": -73.459632
+        },
+        {
+          "lat": 44.7167281,
+          "lon": -73.4590211
+        }
+      ],
+      "tags": {
+        "highway": "motorway_link",
+        "lanes": "1",
+        "oneway": "yes",
+        "surface": "asphalt",
+        "tiger:cfcc": "A63",
+        "tiger:county": "Clinton, NY"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20056993,
+      "bounds": {
+        "minlat": 44.713365,
+        "minlon": -73.4626584,
+        "maxlat": 44.715056,
+        "maxlon": -73.460551
+      },
+      "nodes": [
+        211829904,
+        211829898,
+        211829897,
+        211829895,
+        211829891,
+        211829888,
+        211829886,
+        211829884,
+        211829881,
+        211829879,
+        211829876,
+        211829874,
+        211829873,
+        211829872,
+        211829871,
+        211829868,
+        211829866,
+        211829864,
+        211829862,
+        211829860,
+        211829858,
+        211829857,
+        211829855,
+        211829854,
+        211829845
+      ],
+      "geometry": [
+        {
+          "lat": 44.7148471,
+          "lon": -73.4626468
+        },
+        {
+          "lat": 44.714986,
+          "lon": -73.462178
+        },
+        {
+          "lat": 44.715028,
+          "lon": -73.46201
+        },
+        {
+          "lat": 44.715049,
+          "lon": -73.461894
+        },
+        {
+          "lat": 44.715056,
+          "lon": -73.4617
+        },
+        {
+          "lat": 44.715012,
+          "lon": -73.461375
+        },
+        {
+          "lat": 44.714953,
+          "lon": -73.461173
+        },
+        {
+          "lat": 44.714848,
+          "lon": -73.46096
+        },
+        {
+          "lat": 44.714718,
+          "lon": -73.460788
+        },
+        {
+          "lat": 44.714657,
+          "lon": -73.460723
+        },
+        {
+          "lat": 44.714512,
+          "lon": -73.460619
+        },
+        {
+          "lat": 44.714384,
+          "lon": -73.460568
+        },
+        {
+          "lat": 44.714228,
+          "lon": -73.460551
+        },
+        {
+          "lat": 44.714048,
+          "lon": -73.460573
+        },
+        {
+          "lat": 44.713884,
+          "lon": -73.460637
+        },
+        {
+          "lat": 44.713754,
+          "lon": -73.460731
+        },
+        {
+          "lat": 44.713587,
+          "lon": -73.460928
+        },
+        {
+          "lat": 44.713481,
+          "lon": -73.461128
+        },
+        {
+          "lat": 44.71344,
+          "lon": -73.461246
+        },
+        {
+          "lat": 44.713391,
+          "lon": -73.46146
+        },
+        {
+          "lat": 44.713365,
+          "lon": -73.461688
+        },
+        {
+          "lat": 44.713365,
+          "lon": -73.461808
+        },
+        {
+          "lat": 44.713401,
+          "lon": -73.462058
+        },
+        {
+          "lat": 44.713432,
+          "lon": -73.462189
+        },
+        {
+          "lat": 44.7135777,
+          "lon": -73.4626584
+        }
+      ],
+      "tags": {
+        "destination": "Dannemora",
+        "destination:ref": "NY 374 West",
+        "highway": "motorway_link",
+        "junction:ref": "38N",
+        "lanes": "1",
+        "maxspeed:advisory": "25 mph",
+        "oneway": "yes",
+        "surface": "asphalt",
+        "tiger:cfcc": "A63",
+        "tiger:county": "Clinton, NY"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809722405,
+      "bounds": {
+        "minlat": 44.718102,
+        "minlon": -73.462741,
+        "maxlat": 44.718816,
+        "maxlon": -73.46232
+      },
+      "nodes": [
+        7570829562,
+        7570829561,
+        7570829564,
+        7570829563,
+        7570829562
+      ],
+      "geometry": [
+        {
+          "lat": 44.718792,
+          "lon": -73.462741
+        },
+        {
+          "lat": 44.718816,
+          "lon": -73.462422
+        },
+        {
+          "lat": 44.718126,
+          "lon": -73.46232
+        },
+        {
+          "lat": 44.718102,
+          "lon": -73.462638
+        },
+        {
+          "lat": 44.718792,
+          "lon": -73.462741
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "99",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Trade Road",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 936136329,
+      "bounds": {
+        "minlat": 44.7135244,
+        "minlon": -73.4563479,
+        "maxlat": 44.7141927,
+        "maxlon": -73.4553522
+      },
+      "nodes": [
+        8674393831,
+        8674393832,
+        8674393833,
+        8674393834,
+        8674393831
+      ],
+      "geometry": [
+        {
+          "lat": 44.7140114,
+          "lon": -73.4563479
+        },
+        {
+          "lat": 44.7135244,
+          "lon": -73.4561204
+        },
+        {
+          "lat": 44.7137057,
+          "lon": -73.4553522
+        },
+        {
+          "lat": 44.7141927,
+          "lon": -73.4555798
+        },
+        {
+          "lat": 44.7140114,
+          "lon": -73.4563479
+        }
+      ],
+      "tags": {
+        "building": "industrial",
+        "man_made": "cooling",
+        "note": "air_cooling"
+      }
+    },
+    {
+      "type": "way",
+      "id": 936136328,
+      "bounds": {
+        "minlat": 44.7122602,
+        "minlon": -73.4569732,
+        "maxlat": 44.714344,
+        "maxlon": -73.4549377
+      },
+      "nodes": [
+        8674393825,
+        8674393826,
+        8674393827,
+        8674393828,
+        8674393825
+      ],
+      "geometry": [
+        {
+          "lat": 44.7141804,
+          "lon": -73.4569732
+        },
+        {
+          "lat": 44.7122602,
+          "lon": -73.4560489
+        },
+        {
+          "lat": 44.7123741,
+          "lon": -73.4549377
+        },
+        {
+          "lat": 44.714344,
+          "lon": -73.4552881
+        },
+        {
+          "lat": 44.7141804,
+          "lon": -73.4569732
+        }
+      ],
+      "tags": {
+        "landuse": "industrial",
+        "name": "Saranac Power Plant",
+        "operator": "Saranac Power Partners LP",
+        "plant:method": "combustion",
+        "plant:output:electricity": "285.6 MW",
+        "plant:source": "gas",
+        "power": "plant",
+        "ref:US:EIA": "54574",
+        "source": "http://globalenergyobservatory.org/geoid/5276",
+        "start_date": "1994-06"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888234,
+      "bounds": {
+        "minlat": 44.712452,
+        "minlon": -73.458571,
+        "maxlat": 44.712563,
+        "maxlon": -73.458454
+      },
+      "nodes": [
+        7563737213,
+        7563737214,
+        7563737211,
+        7563737212,
+        7563737213
+      ],
+      "geometry": [
+        {
+          "lat": 44.712556,
+          "lon": -73.458571
+        },
+        {
+          "lat": 44.712563,
+          "lon": -73.458468
+        },
+        {
+          "lat": 44.71246,
+          "lon": -73.458454
+        },
+        {
+          "lat": 44.712452,
+          "lon": -73.458556
+        },
+        {
+          "lat": 44.712556,
+          "lon": -73.458571
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887498,
+      "bounds": {
+        "minlat": 44.7126857,
+        "minlon": -73.4564042,
+        "maxlat": 44.713559,
+        "maxlon": -73.4552643
+      },
+      "nodes": [
+        7563734874,
+        7563734861,
+        7563734858,
+        7563734868,
+        7563734864,
+        7563734852,
+        7563698474,
+        7563734838,
+        7563734836,
+        7563734842,
+        7563734840,
+        7563734831,
+        7563734874
+      ],
+      "geometry": [
+        {
+          "lat": 44.7126857,
+          "lon": -73.4559937
+        },
+        {
+          "lat": 44.7130526,
+          "lon": -73.4561463
+        },
+        {
+          "lat": 44.7130158,
+          "lon": -73.4563216
+        },
+        {
+          "lat": 44.7132143,
+          "lon": -73.4564042
+        },
+        {
+          "lat": 44.7132408,
+          "lon": -73.456278
+        },
+        {
+          "lat": 44.7134511,
+          "lon": -73.4563765
+        },
+        {
+          "lat": 44.713559,
+          "lon": -73.4558409
+        },
+        {
+          "lat": 44.7134124,
+          "lon": -73.4557692
+        },
+        {
+          "lat": 44.7134704,
+          "lon": -73.4554931
+        },
+        {
+          "lat": 44.7129684,
+          "lon": -73.4552843
+        },
+        {
+          "lat": 44.7129619,
+          "lon": -73.4553154
+        },
+        {
+          "lat": 44.7128389,
+          "lon": -73.4552643
+        },
+        {
+          "lat": 44.7126857,
+          "lon": -73.4559937
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "99",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Weed Street",
+        "building": "industrial"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20069556,
+      "bounds": {
+        "minlat": 44.712922,
+        "minlon": -73.4626584,
+        "maxlat": 44.7135777,
+        "maxlon": -73.461355
+      },
+      "nodes": [
+        211896186,
+        211829845
+      ],
+      "geometry": [
+        {
+          "lat": 44.712922,
+          "lon": -73.461355
+        },
+        {
+          "lat": 44.7135777,
+          "lon": -73.4626584
+        }
+      ],
+      "tags": {
+        "expressway": "yes",
+        "highway": "primary",
+        "oneway": "yes",
+        "ref": "NY 22",
+        "tiger:cfcc": "A35",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "State Highway 22"
+      }
+    },
+    {
+      "type": "way",
+      "id": 93815031,
+      "bounds": {
+        "minlat": 44.7183597,
+        "minlon": -73.4566117,
+        "maxlat": 44.721631,
+        "maxlon": -73.450495
+      },
+      "nodes": [
+        211899733,
+        211899730,
+        211831850
+      ],
+      "geometry": [
+        {
+          "lat": 44.721631,
+          "lon": -73.450495
+        },
+        {
+          "lat": 44.718935,
+          "lon": -73.455537
+        },
+        {
+          "lat": 44.7183597,
+          "lon": -73.4566117
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "foot": "no",
+        "hgv": "designated",
+        "highway": "motorway",
+        "horse": "no",
+        "lanes": "2",
+        "maxspeed": "65 mph",
+        "name": "Adirondack Northway",
+        "oneway": "yes",
+        "ref": "I 87",
+        "surface": "asphalt",
+        "tiger:cfcc": "A15",
+        "tiger:county": "Clinton, NY:Essex, NY",
+        "tiger:name_base": "I-87",
+        "tiger:name_base_1": "Adirondack Northway"
+      }
+    },
+    {
+      "type": "way",
+      "id": 194109345,
+      "bounds": {
+        "minlat": 44.7181659,
+        "minlon": -73.4563852,
+        "maxlat": 44.721477,
+        "maxlon": -73.450246
+      },
+      "nodes": [
+        211831853,
+        211898625,
+        211898622
+      ],
+      "geometry": [
+        {
+          "lat": 44.7181659,
+          "lon": -73.4563852
+        },
+        {
+          "lat": 44.718782,
+          "lon": -73.455287
+        },
+        {
+          "lat": 44.721477,
+          "lon": -73.450246
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "foot": "no",
+        "hgv": "designated",
+        "highway": "motorway",
+        "horse": "no",
+        "lanes": "2",
+        "maxspeed": "65 mph",
+        "name": "Adirondack Northway",
+        "oneway": "yes",
+        "ref": "I 87",
+        "surface": "asphalt",
+        "tiger:cfcc": "A15",
+        "tiger:county": "Clinton, NY:Essex, NY",
+        "tiger:name_base": "I-87",
+        "tiger:name_base_1": "Adirondack Northway"
+      }
+    },
+    {
+      "type": "way",
+      "id": 636794934,
+      "bounds": {
+        "minlat": 44.7144843,
+        "minlon": -73.4635433,
+        "maxlat": 44.7146546,
+        "maxlon": -73.4633121
+      },
+      "nodes": [
+        6004487768,
+        6004487767
+      ],
+      "geometry": [
+        {
+          "lat": 44.7144843,
+          "lon": -73.4633121
+        },
+        {
+          "lat": 44.7146546,
+          "lon": -73.4635433
+        }
+      ],
+      "tags": {
+        "access": "no",
+        "highway": "service"
+      }
+    },
+    {
+      "type": "way",
+      "id": 139306281,
+      "bounds": {
+        "minlat": 44.7135777,
+        "minlon": -73.4636506,
+        "maxlat": 44.7140752,
+        "maxlon": -73.4626584
+      },
+      "nodes": [
+        211829845,
+        211898639
+      ],
+      "geometry": [
+        {
+          "lat": 44.7135777,
+          "lon": -73.4626584
+        },
+        {
+          "lat": 44.7140752,
+          "lon": -73.4636506
+        }
+      ],
+      "tags": {
+        "expressway": "yes",
+        "hgv": "designated",
+        "hgv:state_network": "yes",
+        "highway": "primary",
+        "oneway": "yes",
+        "ref": "NY 22;NY 374",
+        "source:hgv:state_network": "NYSDOT https://www.dot.ny.gov/divisions/operating/oom/transportation-systems/repository/2010%20trk%20access%20bk.pdf",
+        "tiger:cfcc": "A35",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "State Highway 22"
+      }
+    },
+    {
+      "type": "way",
+      "id": 139306269,
+      "bounds": {
+        "minlat": 44.710841,
+        "minlon": -73.4627008,
+        "maxlat": 44.7134514,
+        "maxlon": -73.460349
+      },
+      "nodes": [
+        211830159,
+        212012571,
+        212012567,
+        212012564,
+        212012562,
+        212012559,
+        212012556,
+        212012553,
+        212012551,
+        212012549,
+        212012546,
+        212012544,
+        212012542,
+        211926940
+      ],
+      "geometry": [
+        {
+          "lat": 44.7134514,
+          "lon": -73.4627008
+        },
+        {
+          "lat": 44.713229,
+          "lon": -73.46226
+        },
+        {
+          "lat": 44.713046,
+          "lon": -73.461952
+        },
+        {
+          "lat": 44.712818,
+          "lon": -73.461631
+        },
+        {
+          "lat": 44.712753,
+          "lon": -73.461552
+        },
+        {
+          "lat": 44.712706,
+          "lon": -73.461494
+        },
+        {
+          "lat": 44.712467,
+          "lon": -73.461233
+        },
+        {
+          "lat": 44.712248,
+          "lon": -73.461033
+        },
+        {
+          "lat": 44.71212,
+          "lon": -73.460927
+        },
+        {
+          "lat": 44.711818,
+          "lon": -73.460718
+        },
+        {
+          "lat": 44.711548,
+          "lon": -73.460574
+        },
+        {
+          "lat": 44.711324,
+          "lon": -73.460482
+        },
+        {
+          "lat": 44.710929,
+          "lon": -73.460364
+        },
+        {
+          "lat": 44.710841,
+          "lon": -73.460349
+        }
+      ],
+      "tags": {
+        "expressway": "yes",
+        "highway": "primary",
+        "oneway": "yes",
+        "ref": "NY 22",
+        "tiger:cfcc": "A35",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "State Highway 22"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20058763,
+      "bounds": {
+        "minlat": 44.714958,
+        "minlon": -73.466016,
+        "maxlat": 44.716486,
+        "maxlon": -73.462202
+      },
+      "nodes": [
+        211847551,
+        211847548,
+        211847547,
+        211847545,
+        211847543,
+        211847541,
+        211847540,
+        12454397765,
+        211847538,
+        211847535,
+        211847533,
+        211847531,
+        211847529,
+        211847527,
+        211847526,
+        211847524,
+        211847522,
+        211847521,
+        211847519,
+        211847517,
+        211847515,
+        211847513,
+        211847510,
+        211847508,
+        211847506,
+        211847504,
+        211847502,
+        211847500,
+        211847499,
+        211847497
+      ],
+      "geometry": [
+        {
+          "lat": 44.714958,
+          "lon": -73.4654012
+        },
+        {
+          "lat": 44.71511,
+          "lon": -73.4655738
+        },
+        {
+          "lat": 44.715302,
+          "lon": -73.465821
+        },
+        {
+          "lat": 44.715402,
+          "lon": -73.46591
+        },
+        {
+          "lat": 44.715559,
+          "lon": -73.465995
+        },
+        {
+          "lat": 44.715674,
+          "lon": -73.466016
+        },
+        {
+          "lat": 44.715776,
+          "lon": -73.466003
+        },
+        {
+          "lat": 44.71584,
+          "lon": -73.4659796
+        },
+        {
+          "lat": 44.715943,
+          "lon": -73.465942
+        },
+        {
+          "lat": 44.716077,
+          "lon": -73.465842
+        },
+        {
+          "lat": 44.71622,
+          "lon": -73.465675
+        },
+        {
+          "lat": 44.716261,
+          "lon": -73.465603
+        },
+        {
+          "lat": 44.716356,
+          "lon": -73.465347
+        },
+        {
+          "lat": 44.716376,
+          "lon": -73.465238
+        },
+        {
+          "lat": 44.716412,
+          "lon": -73.464913
+        },
+        {
+          "lat": 44.716476,
+          "lon": -73.4637
+        },
+        {
+          "lat": 44.716486,
+          "lon": -73.463145
+        },
+        {
+          "lat": 44.716468,
+          "lon": -73.462951
+        },
+        {
+          "lat": 44.716445,
+          "lon": -73.462847
+        },
+        {
+          "lat": 44.716385,
+          "lon": -73.46268
+        },
+        {
+          "lat": 44.716289,
+          "lon": -73.462501
+        },
+        {
+          "lat": 44.716134,
+          "lon": -73.46233
+        },
+        {
+          "lat": 44.716,
+          "lon": -73.46225
+        },
+        {
+          "lat": 44.715862,
+          "lon": -73.462207
+        },
+        {
+          "lat": 44.715732,
+          "lon": -73.462202
+        },
+        {
+          "lat": 44.715602,
+          "lon": -73.462243
+        },
+        {
+          "lat": 44.715467,
+          "lon": -73.462315
+        },
+        {
+          "lat": 44.715338,
+          "lon": -73.462429
+        },
+        {
+          "lat": 44.715263,
+          "lon": -73.46253
+        },
+        {
+          "lat": 44.7149839,
+          "lon": -73.4629434
+        }
+      ],
+      "tags": {
+        "highway": "motorway_link",
+        "lanes": "1",
+        "oneway": "yes",
+        "surface": "asphalt",
+        "tiger:cfcc": "A63",
+        "tiger:county": "Clinton, NY"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887215,
+      "bounds": {
+        "minlat": 44.71123,
+        "minlon": -73.458899,
+        "maxlat": 44.711752,
+        "maxlon": -73.458479
+      },
+      "nodes": [
+        7563736194,
+        7563736193,
+        7563736190,
+        7563736189,
+        7563736192,
+        7563736191,
+        7563736194
+      ],
+      "geometry": [
+        {
+          "lat": 44.711721,
+          "lon": -73.458692
+        },
+        {
+          "lat": 44.711742,
+          "lon": -73.458695
+        },
+        {
+          "lat": 44.711752,
+          "lon": -73.458553
+        },
+        {
+          "lat": 44.711235,
+          "lon": -73.458479
+        },
+        {
+          "lat": 44.71123,
+          "lon": -73.458558
+        },
+        {
+          "lat": 44.711706,
+          "lon": -73.458899
+        },
+        {
+          "lat": 44.711721,
+          "lon": -73.458692
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "41",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Veterans Lane",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887090,
+      "bounds": {
+        "minlat": 44.711326,
+        "minlon": -73.457996,
+        "maxlat": 44.711853,
+        "maxlon": -73.45738
+      },
+      "nodes": [
+        7563743002,
+        7563743003,
+        7563743004,
+        7563743005,
+        7563742998,
+        7563742999,
+        7563743000,
+        7563743001,
+        7563742994,
+        7563742995,
+        7563743002
+      ],
+      "geometry": [
+        {
+          "lat": 44.71136,
+          "lon": -73.45738
+        },
+        {
+          "lat": 44.711326,
+          "lon": -73.457848
+        },
+        {
+          "lat": 44.711795,
+          "lon": -73.457916
+        },
+        {
+          "lat": 44.71179,
+          "lon": -73.457989
+        },
+        {
+          "lat": 44.711843,
+          "lon": -73.457996
+        },
+        {
+          "lat": 44.711853,
+          "lon": -73.457856
+        },
+        {
+          "lat": 44.711817,
+          "lon": -73.45785
+        },
+        {
+          "lat": 44.711849,
+          "lon": -73.457415
+        },
+        {
+          "lat": 44.711698,
+          "lon": -73.457393
+        },
+        {
+          "lat": 44.711695,
+          "lon": -73.457428
+        },
+        {
+          "lat": 44.71136,
+          "lon": -73.45738
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "46",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Veterans Lane",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 35971080,
+      "bounds": {
+        "minlat": 44.7134514,
+        "minlon": -73.4637543,
+        "maxlat": 44.7139784,
+        "maxlon": -73.4627008
+      },
+      "nodes": [
+        211898642,
+        211830159
+      ],
+      "geometry": [
+        {
+          "lat": 44.7139784,
+          "lon": -73.4637543
+        },
+        {
+          "lat": 44.7134514,
+          "lon": -73.4627008
+        }
+      ],
+      "tags": {
+        "expressway": "yes",
+        "hgv": "designated",
+        "hgv:state_network": "yes",
+        "highway": "primary",
+        "oneway": "yes",
+        "ref": "NY 22;NY 374",
+        "source:hgv:state_network": "NYSDOT https://www.dot.ny.gov/divisions/operating/oom/transportation-systems/repository/2010%20trk%20access%20bk.pdf",
+        "tiger:cfcc": "A35",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "State Highway 22"
+      }
+    },
+    {
+      "type": "way",
+      "id": 35971086,
+      "bounds": {
+        "minlat": 44.715924,
+        "minlon": -73.46824,
+        "maxlat": 44.7170216,
+        "maxlon": -73.459167
+      },
+      "nodes": [
+        420445012,
+        211856320,
+        211856323,
+        211856325,
+        211856327,
+        211856330,
+        211856332,
+        211856335,
+        211856338,
+        211856341,
+        211856344,
+        211856347,
+        211856350,
+        211856353,
+        211856356,
+        211856359,
+        211856364,
+        211856367,
+        211856371,
+        211856374,
+        211856377,
+        211856380
+      ],
+      "geometry": [
+        {
+          "lat": 44.7170216,
+          "lon": -73.459167
+        },
+        {
+          "lat": 44.716944,
+          "lon": -73.459367
+        },
+        {
+          "lat": 44.716852,
+          "lon": -73.459603
+        },
+        {
+          "lat": 44.716769,
+          "lon": -73.45988
+        },
+        {
+          "lat": 44.716716,
+          "lon": -73.460163
+        },
+        {
+          "lat": 44.716635,
+          "lon": -73.461518
+        },
+        {
+          "lat": 44.716573,
+          "lon": -73.462884
+        },
+        {
+          "lat": 44.716502,
+          "lon": -73.464251
+        },
+        {
+          "lat": 44.716466,
+          "lon": -73.465058
+        },
+        {
+          "lat": 44.716441,
+          "lon": -73.46528
+        },
+        {
+          "lat": 44.716389,
+          "lon": -73.465525
+        },
+        {
+          "lat": 44.71632,
+          "lon": -73.465711
+        },
+        {
+          "lat": 44.716253,
+          "lon": -73.46586
+        },
+        {
+          "lat": 44.716134,
+          "lon": -73.466085
+        },
+        {
+          "lat": 44.716009,
+          "lon": -73.46637
+        },
+        {
+          "lat": 44.715954,
+          "lon": -73.466575
+        },
+        {
+          "lat": 44.715924,
+          "lon": -73.466804
+        },
+        {
+          "lat": 44.715927,
+          "lon": -73.466964
+        },
+        {
+          "lat": 44.715954,
+          "lon": -73.467164
+        },
+        {
+          "lat": 44.716032,
+          "lon": -73.467416
+        },
+        {
+          "lat": 44.716164,
+          "lon": -73.467693
+        },
+        {
+          "lat": 44.716379,
+          "lon": -73.46824
+        }
+      ],
+      "tags": {
+        "destination": "Dannemora;Saranac Lake",
+        "destination:ref": "NY 22 North;NY 374 West",
+        "highway": "motorway_link",
+        "junction:ref": "38N",
+        "lanes": "1",
+        "maxspeed:advisory": "40 mph",
+        "oneway": "yes",
+        "surface": "asphalt",
+        "tiger:cfcc": "A63",
+        "tiger:county": "Clinton, NY"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887190,
+      "bounds": {
+        "minlat": 44.712383,
+        "minlon": -73.455496,
+        "maxlat": 44.712636,
+        "maxlon": -73.455103
+      },
+      "nodes": [
+        7563735648,
+        7563735651,
+        7563735650,
+        7563735645,
+        7563735648
+      ],
+      "geometry": [
+        {
+          "lat": 44.712407,
+          "lon": -73.455103
+        },
+        {
+          "lat": 44.712383,
+          "lon": -73.455466
+        },
+        {
+          "lat": 44.712612,
+          "lon": -73.455496
+        },
+        {
+          "lat": 44.712636,
+          "lon": -73.455133
+        },
+        {
+          "lat": 44.712407,
+          "lon": -73.455103
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809724121,
+      "bounds": {
+        "minlat": 44.71835,
+        "minlon": -73.464671,
+        "maxlat": 44.71848,
+        "maxlon": -73.464541
+      },
+      "nodes": [
+        7570826112,
+        7570826111,
+        7570826110,
+        7570826103,
+        7570826112
+      ],
+      "geometry": [
+        {
+          "lat": 44.718356,
+          "lon": -73.464541
+        },
+        {
+          "lat": 44.71835,
+          "lon": -73.464657
+        },
+        {
+          "lat": 44.718473,
+          "lon": -73.464671
+        },
+        {
+          "lat": 44.71848,
+          "lon": -73.464555
+        },
+        {
+          "lat": 44.718356,
+          "lon": -73.464541
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 35971081,
+      "bounds": {
+        "minlat": 44.7140752,
+        "minlon": -73.4643919,
+        "maxlat": 44.7144544,
+        "maxlon": -73.4636506
+      },
+      "nodes": [
+        211898639,
+        420445009
+      ],
+      "geometry": [
+        {
+          "lat": 44.7140752,
+          "lon": -73.4636506
+        },
+        {
+          "lat": 44.7144544,
+          "lon": -73.4643919
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "expressway": "yes",
+        "hgv": "designated",
+        "hgv:state_network": "yes",
+        "highway": "primary",
+        "layer": "1",
+        "level": "1",
+        "oneway": "yes",
+        "ref": "NY 22;NY 374",
+        "source:hgv:state_network": "NYSDOT https://www.dot.ny.gov/divisions/operating/oom/transportation-systems/repository/2010%20trk%20access%20bk.pdf",
+        "tiger:cfcc": "A35",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "State Highway 22"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808886934,
+      "bounds": {
+        "minlat": 44.711275,
+        "minlon": -73.457186,
+        "maxlat": 44.711459,
+        "maxlon": -73.457015
+      },
+      "nodes": [
+        7563736495,
+        7563736496,
+        7563736497,
+        7563736490,
+        7563736495
+      ],
+      "geometry": [
+        {
+          "lat": 44.711442,
+          "lon": -73.457186
+        },
+        {
+          "lat": 44.711459,
+          "lon": -73.457061
+        },
+        {
+          "lat": 44.711292,
+          "lon": -73.457015
+        },
+        {
+          "lat": 44.711275,
+          "lon": -73.45714
+        },
+        {
+          "lat": 44.711442,
+          "lon": -73.457186
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 35971079,
+      "bounds": {
+        "minlat": 44.7139784,
+        "minlon": -73.4645201,
+        "maxlat": 44.7143731,
+        "maxlon": -73.4637543
+      },
+      "nodes": [
+        420445008,
+        211898642
+      ],
+      "geometry": [
+        {
+          "lat": 44.7143731,
+          "lon": -73.4645201
+        },
+        {
+          "lat": 44.7139784,
+          "lon": -73.4637543
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "expressway": "yes",
+        "hgv": "designated",
+        "hgv:state_network": "yes",
+        "highway": "primary",
+        "layer": "1",
+        "level": "1",
+        "oneway": "yes",
+        "ref": "NY 22;NY 374",
+        "source:hgv:state_network": "NYSDOT https://www.dot.ny.gov/divisions/operating/oom/transportation-systems/repository/2010%20trk%20access%20bk.pdf",
+        "tiger:cfcc": "A35",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "State Highway 22"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809722655,
+      "bounds": {
+        "minlat": 44.717825,
+        "minlon": -73.465062,
+        "maxlat": 44.7183,
+        "maxlon": -73.464832
+      },
+      "nodes": [
+        7570833115,
+        7570833114,
+        7570833113,
+        7570833112,
+        7570833115
+      ],
+      "geometry": [
+        {
+          "lat": 44.718288,
+          "lon": -73.465062
+        },
+        {
+          "lat": 44.7183,
+          "lon": -73.4649
+        },
+        {
+          "lat": 44.717837,
+          "lon": -73.464832
+        },
+        {
+          "lat": 44.717825,
+          "lon": -73.464994
+        },
+        {
+          "lat": 44.718288,
+          "lon": -73.465062
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "73",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Trade Road",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 113900780,
+      "bounds": {
+        "minlat": 44.708805,
+        "minlon": -73.461355,
+        "maxlat": 44.712922,
+        "maxlon": -73.45726
+      },
+      "nodes": [
+        211896159,
+        211896161,
+        211896163,
+        211896165,
+        211896168,
+        211896170,
+        211837106,
+        211896172,
+        211896174,
+        211896176,
+        211896179,
+        211896181,
+        211896184,
+        211896186
+      ],
+      "geometry": [
+        {
+          "lat": 44.708805,
+          "lon": -73.45726
+        },
+        {
+          "lat": 44.709099,
+          "lon": -73.45734
+        },
+        {
+          "lat": 44.709392,
+          "lon": -73.457452
+        },
+        {
+          "lat": 44.709626,
+          "lon": -73.457571
+        },
+        {
+          "lat": 44.709961,
+          "lon": -73.457801
+        },
+        {
+          "lat": 44.710181,
+          "lon": -73.457986
+        },
+        {
+          "lat": 44.71088,
+          "lon": -73.458631
+        },
+        {
+          "lat": 44.711381,
+          "lon": -73.459101
+        },
+        {
+          "lat": 44.711601,
+          "lon": -73.459322
+        },
+        {
+          "lat": 44.711797,
+          "lon": -73.459544
+        },
+        {
+          "lat": 44.712092,
+          "lon": -73.45992
+        },
+        {
+          "lat": 44.712252,
+          "lon": -73.460144
+        },
+        {
+          "lat": 44.712602,
+          "lon": -73.460726
+        },
+        {
+          "lat": 44.712922,
+          "lon": -73.461355
+        }
+      ],
+      "tags": {
+        "expressway": "yes",
+        "highway": "primary",
+        "name": "Oak Street",
+        "name_1": "State Highway 22",
+        "oneway": "yes",
+        "ref": "NY 22",
+        "tiger:cfcc": "A35",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "Oak",
+        "tiger:name_base_1": "State Highway 22",
+        "tiger:name_type": "St"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888121,
+      "bounds": {
+        "minlat": 44.710821,
+        "minlon": -73.457781,
+        "maxlat": 44.711098,
+        "maxlon": -73.457166
+      },
+      "nodes": [
+        7563735365,
+        7563735362,
+        7563735363,
+        7563735360,
+        7563735365
+      ],
+      "geometry": [
+        {
+          "lat": 44.71087,
+          "lon": -73.457166
+        },
+        {
+          "lat": 44.710821,
+          "lon": -73.457743
+        },
+        {
+          "lat": 44.711049,
+          "lon": -73.457781
+        },
+        {
+          "lat": 44.711098,
+          "lon": -73.457205
+        },
+        {
+          "lat": 44.71087,
+          "lon": -73.457166
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:flats": "A;C;D;F",
+        "addr:housenumber": "32",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Veterans Lane",
+        "building": "yes",
+        "nysgissam:nysaddresspointid": "CLIN039870;CLIN023547;CLIN040693;CLIN043924;CLIN040726"
+      }
+    },
+    {
+      "type": "way",
+      "id": 194109312,
+      "bounds": {
+        "minlat": 44.710877,
+        "minlon": -73.470064,
+        "maxlat": 44.7167705,
+        "maxlon": -73.4590466
+      },
+      "nodes": [
+        211856795,
+        211843379,
+        211898647,
+        211830231,
+        211898645,
+        420445011,
+        211898637,
+        6004487768,
+        211829904,
+        211898633,
+        420445014
+      ],
+      "geometry": [
+        {
+          "lat": 44.710877,
+          "lon": -73.470064
+        },
+        {
+          "lat": 44.7113033,
+          "lon": -73.4692657
+        },
+        {
+          "lat": 44.713,
+          "lon": -73.466086
+        },
+        {
+          "lat": 44.713353,
+          "lon": -73.4654373
+        },
+        {
+          "lat": 44.714065,
+          "lon": -73.464089
+        },
+        {
+          "lat": 44.7141581,
+          "lon": -73.4639033
+        },
+        {
+          "lat": 44.714233,
+          "lon": -73.463773
+        },
+        {
+          "lat": 44.7144843,
+          "lon": -73.4633121
+        },
+        {
+          "lat": 44.7148471,
+          "lon": -73.4626468
+        },
+        {
+          "lat": 44.716345,
+          "lon": -73.459842
+        },
+        {
+          "lat": 44.7167705,
+          "lon": -73.4590466
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "foot": "no",
+        "hgv": "designated",
+        "highway": "motorway",
+        "horse": "no",
+        "lanes": "2",
+        "maxspeed": "65 mph",
+        "name": "Adirondack Northway",
+        "oneway": "yes",
+        "ref": "I 87",
+        "surface": "asphalt",
+        "tiger:cfcc": "A15",
+        "tiger:county": "Clinton, NY:Essex, NY",
+        "tiger:name_base": "I-87",
+        "tiger:name_base_1": "Adirondack Northway"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809721841,
+      "bounds": {
+        "minlat": 44.717124,
+        "minlon": -73.465293,
+        "maxlat": 44.7173,
+        "maxlon": -73.465148
+      },
+      "nodes": [
+        7570818175,
+        7570818180,
+        7570818178,
+        7570818170,
+        7570818175
+      ],
+      "geometry": [
+        {
+          "lat": 44.717133,
+          "lon": -73.465148
+        },
+        {
+          "lat": 44.717124,
+          "lon": -73.465268
+        },
+        {
+          "lat": 44.71729,
+          "lon": -73.465293
+        },
+        {
+          "lat": 44.7173,
+          "lon": -73.465174
+        },
+        {
+          "lat": 44.717133,
+          "lon": -73.465148
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809723675,
+      "bounds": {
+        "minlat": 44.718603,
+        "minlon": -73.46515,
+        "maxlat": 44.718831,
+        "maxlon": -73.465006
+      },
+      "nodes": [
+        7570816508,
+        7570816504,
+        7570816503,
+        7570816502,
+        7570816500,
+        7570816507,
+        7570816508
+      ],
+      "geometry": [
+        {
+          "lat": 44.718636,
+          "lon": -73.465043
+        },
+        {
+          "lat": 44.71861,
+          "lon": -73.465037
+        },
+        {
+          "lat": 44.718603,
+          "lon": -73.465103
+        },
+        {
+          "lat": 44.71882,
+          "lon": -73.46515
+        },
+        {
+          "lat": 44.718831,
+          "lon": -73.465047
+        },
+        {
+          "lat": 44.71864,
+          "lon": -73.465006
+        },
+        {
+          "lat": 44.718636,
+          "lon": -73.465043
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888520,
+      "bounds": {
+        "minlat": 44.710615,
+        "minlon": -73.45709,
+        "maxlat": 44.711219,
+        "maxlon": -73.456613
+      },
+      "nodes": [
+        7563741818,
+        7563741817,
+        7563741816,
+        7563741807,
+        7563741806,
+        7563741805,
+        7563741804,
+        7563741811,
+        7563741810,
+        7563741809,
+        7563741818
+      ],
+      "geometry": [
+        {
+          "lat": 44.711172,
+          "lon": -73.45709
+        },
+        {
+          "lat": 44.711219,
+          "lon": -73.456868
+        },
+        {
+          "lat": 44.711035,
+          "lon": -73.456791
+        },
+        {
+          "lat": 44.711049,
+          "lon": -73.456726
+        },
+        {
+          "lat": 44.710862,
+          "lon": -73.456647
+        },
+        {
+          "lat": 44.710851,
+          "lon": -73.456699
+        },
+        {
+          "lat": 44.710646,
+          "lon": -73.456613
+        },
+        {
+          "lat": 44.710615,
+          "lon": -73.456759
+        },
+        {
+          "lat": 44.710656,
+          "lon": -73.456777
+        },
+        {
+          "lat": 44.710637,
+          "lon": -73.456865
+        },
+        {
+          "lat": 44.711172,
+          "lon": -73.45709
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:flats": "100;200",
+        "addr:housenumber": "25",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Monroe Way",
+        "building": "yes",
+        "nysgissam:nysaddresspointid": "CLIN004953;CLIN037241;CLIN034972"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20064068,
+      "bounds": {
+        "minlat": 44.708861,
+        "minlon": -73.4583741,
+        "maxlat": 44.7121069,
+        "maxlon": -73.456733
+      },
+      "nodes": [
+        211909336,
+        211915997,
+        13532188170,
+        211915999,
+        211916001,
+        211916003,
+        211916005,
+        211916007,
+        211916009
+      ],
+      "geometry": [
+        {
+          "lat": 44.708861,
+          "lon": -73.456733
+        },
+        {
+          "lat": 44.709364,
+          "lon": -73.45708
+        },
+        {
+          "lat": 44.7093921,
+          "lon": -73.4571008
+        },
+        {
+          "lat": 44.710594,
+          "lon": -73.45799
+        },
+        {
+          "lat": 44.710798,
+          "lon": -73.458098
+        },
+        {
+          "lat": 44.710979,
+          "lon": -73.45816
+        },
+        {
+          "lat": 44.711453,
+          "lon": -73.45826
+        },
+        {
+          "lat": 44.712009,
+          "lon": -73.458352
+        },
+        {
+          "lat": 44.7121069,
+          "lon": -73.4583741
+        }
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Veterans Lane",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "Veterans",
+        "tiger:name_type": "Ln",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "12901",
+        "tiger:zip_right": "12901"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809722825,
+      "bounds": {
+        "minlat": 44.71864,
+        "minlon": -73.465316,
+        "maxlat": 44.718767,
+        "maxlon": -73.465231
+      },
+      "nodes": [
+        7570809276,
+        7570809273,
+        7570809274,
+        7570809269,
+        7570809276
+      ],
+      "geometry": [
+        {
+          "lat": 44.718645,
+          "lon": -73.465231
+        },
+        {
+          "lat": 44.71864,
+          "lon": -73.465295
+        },
+        {
+          "lat": 44.718762,
+          "lon": -73.465316
+        },
+        {
+          "lat": 44.718767,
+          "lon": -73.465253
+        },
+        {
+          "lat": 44.718645,
+          "lon": -73.465231
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809724141,
+      "bounds": {
+        "minlat": 44.718348,
+        "minlon": -73.465527,
+        "maxlat": 44.718483,
+        "maxlon": -73.465195
+      },
+      "nodes": [
+        7570826441,
+        7570826444,
+        7570826443,
+        7570826442,
+        7570826441
+      ],
+      "geometry": [
+        {
+          "lat": 44.718483,
+          "lon": -73.465211
+        },
+        {
+          "lat": 44.71837,
+          "lon": -73.465195
+        },
+        {
+          "lat": 44.718348,
+          "lon": -73.465511
+        },
+        {
+          "lat": 44.718462,
+          "lon": -73.465527
+        },
+        {
+          "lat": 44.718483,
+          "lon": -73.465211
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 1547908154,
+      "bounds": {
+        "minlat": 44.7143731,
+        "minlon": -73.4655208,
+        "maxlat": 44.7148672,
+        "maxlon": -73.4645201
+      },
+      "nodes": [
+        14078623829,
+        211829976,
+        420445008
+      ],
+      "geometry": [
+        {
+          "lat": 44.7148672,
+          "lon": -73.4655208
+        },
+        {
+          "lat": 44.7147808,
+          "lon": -73.4653487
+        },
+        {
+          "lat": 44.7143731,
+          "lon": -73.4645201
+        }
+      ],
+      "tags": {
+        "expressway": "yes",
+        "hgv": "designated",
+        "hgv:state_network": "yes",
+        "highway": "primary",
+        "lane_markings": "yes",
+        "lanes": "3",
+        "oneway": "yes",
+        "ref": "NY 22;NY 374",
+        "source:hgv:state_network": "NYSDOT https://www.dot.ny.gov/divisions/operating/oom/transportation-systems/repository/2010%20trk%20access%20bk.pdf",
+        "surface": "asphalt",
+        "tiger:cfcc": "A35",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "State Highway 22"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887886,
+      "bounds": {
+        "minlat": 44.710145,
+        "minlon": -73.457606,
+        "maxlat": 44.710717,
+        "maxlon": -73.45682
+      },
+      "nodes": [
+        7563741580,
+        7563741579,
+        7563741578,
+        7563741569,
+        7563741568,
+        7563741567,
+        7563741566,
+        7563741573,
+        7563741572,
+        7563741571,
+        7563741570,
+        7563741561,
+        7563741580
+      ],
+      "geometry": [
+        {
+          "lat": 44.710198,
+          "lon": -73.45682
+        },
+        {
+          "lat": 44.710145,
+          "lon": -73.457514
+        },
+        {
+          "lat": 44.710253,
+          "lon": -73.457531
+        },
+        {
+          "lat": 44.710249,
+          "lon": -73.457591
+        },
+        {
+          "lat": 44.710353,
+          "lon": -73.457606
+        },
+        {
+          "lat": 44.710357,
+          "lon": -73.457553
+        },
+        {
+          "lat": 44.710556,
+          "lon": -73.457583
+        },
+        {
+          "lat": 44.710568,
+          "lon": -73.457436
+        },
+        {
+          "lat": 44.710684,
+          "lon": -73.457454
+        },
+        {
+          "lat": 44.710717,
+          "lon": -73.457024
+        },
+        {
+          "lat": 44.710535,
+          "lon": -73.456997
+        },
+        {
+          "lat": 44.710545,
+          "lon": -73.456872
+        },
+        {
+          "lat": 44.710198,
+          "lon": -73.45682
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:flats": "100-102",
+        "addr:housenumber": "22",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Veterans Lane",
+        "building": "yes",
+        "nysgissam:nysaddresspointid": "CLIN003338;CLIN036063;CLIN036093;CLIN037228"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809721213,
+      "bounds": {
+        "minlat": 44.717761,
+        "minlon": -73.465948,
+        "maxlat": 44.718244,
+        "maxlon": -73.465261
+      },
+      "nodes": [
+        7570834181,
+        7570834182,
+        7570834183,
+        7570834178,
+        7570834179,
+        7570834180,
+        7570834181
+      ],
+      "geometry": [
+        {
+          "lat": 44.718201,
+          "lon": -73.465948
+        },
+        {
+          "lat": 44.718244,
+          "lon": -73.465321
+        },
+        {
+          "lat": 44.717802,
+          "lon": -73.465261
+        },
+        {
+          "lat": 44.717761,
+          "lon": -73.465851
+        },
+        {
+          "lat": 44.717973,
+          "lon": -73.46588
+        },
+        {
+          "lat": 44.71797,
+          "lon": -73.465917
+        },
+        {
+          "lat": 44.718201,
+          "lon": -73.465948
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "63",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Trade Road",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20057028,
+      "bounds": {
+        "minlat": 44.711855,
+        "minlon": -73.466093,
+        "maxlat": 44.7134514,
+        "maxlon": -73.461995
+      },
+      "nodes": [
+        211830159,
+        211830165,
+        211830168,
+        211830173,
+        211830175,
+        211830178,
+        211830180,
+        211830182,
+        211830185,
+        211830187,
+        211830189,
+        211830190,
+        211830192,
+        211830194,
+        211830195,
+        211830197,
+        211830200,
+        211830202,
+        211830205,
+        211830207,
+        211830209,
+        211830212,
+        211830213,
+        211830215,
+        211830216,
+        211830217,
+        211830219,
+        211830221,
+        211830231
+      ],
+      "geometry": [
+        {
+          "lat": 44.7134514,
+          "lon": -73.4627008
+        },
+        {
+          "lat": 44.713132,
+          "lon": -73.462256
+        },
+        {
+          "lat": 44.713025,
+          "lon": -73.462135
+        },
+        {
+          "lat": 44.712856,
+          "lon": -73.462031
+        },
+        {
+          "lat": 44.712718,
+          "lon": -73.461995
+        },
+        {
+          "lat": 44.712543,
+          "lon": -73.462006
+        },
+        {
+          "lat": 44.712472,
+          "lon": -73.462026
+        },
+        {
+          "lat": 44.712291,
+          "lon": -73.462133
+        },
+        {
+          "lat": 44.712186,
+          "lon": -73.462235
+        },
+        {
+          "lat": 44.712085,
+          "lon": -73.462399
+        },
+        {
+          "lat": 44.712047,
+          "lon": -73.462481
+        },
+        {
+          "lat": 44.711978,
+          "lon": -73.46271
+        },
+        {
+          "lat": 44.71195,
+          "lon": -73.462926
+        },
+        {
+          "lat": 44.711933,
+          "lon": -73.463289
+        },
+        {
+          "lat": 44.711871,
+          "lon": -73.464657
+        },
+        {
+          "lat": 44.711855,
+          "lon": -73.465012
+        },
+        {
+          "lat": 44.711865,
+          "lon": -73.46523
+        },
+        {
+          "lat": 44.711898,
+          "lon": -73.465432
+        },
+        {
+          "lat": 44.711991,
+          "lon": -73.465693
+        },
+        {
+          "lat": 44.712102,
+          "lon": -73.465862
+        },
+        {
+          "lat": 44.712219,
+          "lon": -73.465977
+        },
+        {
+          "lat": 44.712344,
+          "lon": -73.466055
+        },
+        {
+          "lat": 44.712504,
+          "lon": -73.466093
+        },
+        {
+          "lat": 44.712657,
+          "lon": -73.46609
+        },
+        {
+          "lat": 44.712764,
+          "lon": -73.466065
+        },
+        {
+          "lat": 44.712894,
+          "lon": -73.465991
+        },
+        {
+          "lat": 44.713017,
+          "lon": -73.465867
+        },
+        {
+          "lat": 44.713077,
+          "lon": -73.465793
+        },
+        {
+          "lat": 44.713353,
+          "lon": -73.4654373
+        }
+      ],
+      "tags": {
+        "highway": "motorway_link",
+        "lanes": "1",
+        "oneway": "yes",
+        "surface": "asphalt",
+        "tiger:cfcc": "A63",
+        "tiger:county": "Clinton, NY"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20057804,
+      "bounds": {
+        "minlat": 44.711729,
+        "minlon": -73.4535,
+        "maxlat": 44.7129191,
+        "maxlon": -73.4534002
+      },
+      "nodes": [
+        211836992,
+        1089908178,
+        1089907489,
+        211836995
+      ],
+      "geometry": [
+        {
+          "lat": 44.711729,
+          "lon": -73.4535
+        },
+        {
+          "lat": 44.7122819,
+          "lon": -73.4534849
+        },
+        {
+          "lat": 44.7125022,
+          "lon": -73.4534788
+        },
+        {
+          "lat": 44.7129191,
+          "lon": -73.4534002
+        }
+      ],
+      "tags": {
+        "access": "private",
+        "highway": "service",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Clinton, NY",
+        "tiger:separated": "no",
+        "tiger:source": "tiger_import_dch_v0.6_20070829",
+        "tiger:tlid": "136069631",
+        "tiger:upload_uuid": "bulk_upload.pl-9008b238-e3f5-42a0-9a79-3f30b43b5bca"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887026,
+      "bounds": {
+        "minlat": 44.712848,
+        "minlon": -73.453111,
+        "maxlat": 44.712953,
+        "maxlon": -73.45284
+      },
+      "nodes": [
+        7563740573,
+        7563740574,
+        7563740575,
+        7563740568,
+        7563740573
+      ],
+      "geometry": [
+        {
+          "lat": 44.712933,
+          "lon": -73.453111
+        },
+        {
+          "lat": 44.712953,
+          "lon": -73.452853
+        },
+        {
+          "lat": 44.712868,
+          "lon": -73.45284
+        },
+        {
+          "lat": 44.712848,
+          "lon": -73.453098
+        },
+        {
+          "lat": 44.712933,
+          "lon": -73.453111
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20061030,
+      "bounds": {
+        "minlat": 44.708973,
+        "minlon": -73.456981,
+        "maxlat": 44.711387,
+        "maxlon": -73.455681
+      },
+      "nodes": [
+        211874534,
+        13532188160,
+        13532188169,
+        211874537,
+        211874540,
+        211874543,
+        211874545,
+        211874547
+      ],
+      "geometry": [
+        {
+          "lat": 44.708973,
+          "lon": -73.455681
+        },
+        {
+          "lat": 44.7091712,
+          "lon": -73.4557718
+        },
+        {
+          "lat": 44.7096372,
+          "lon": -73.4559854
+        },
+        {
+          "lat": 44.710607,
+          "lon": -73.45643
+        },
+        {
+          "lat": 44.711019,
+          "lon": -73.456637
+        },
+        {
+          "lat": 44.711119,
+          "lon": -73.456717
+        },
+        {
+          "lat": 44.711278,
+          "lon": -73.456883
+        },
+        {
+          "lat": 44.711387,
+          "lon": -73.456981
+        }
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Monroe Way",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "Monroe",
+        "tiger:name_type": "Way",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "12901",
+        "tiger:zip_right": "12901"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20058333,
+      "bounds": {
+        "minlat": 44.71001,
+        "minlon": -73.4692657,
+        "maxlat": 44.71189,
+        "maxlon": -73.460203
+      },
+      "nodes": [
+        211843379,
+        211843370,
+        211843369,
+        211843368,
+        211843367,
+        211843366,
+        211843365,
+        211843364,
+        211843362,
+        211843361,
+        211843359,
+        211843357,
+        211843355,
+        211843353,
+        211843352,
+        211843350,
+        211843348,
+        211843345,
+        211843344,
+        211843341,
+        211843338,
+        211843335,
+        211843332,
+        211843329
+      ],
+      "geometry": [
+        {
+          "lat": 44.7113033,
+          "lon": -73.4692657
+        },
+        {
+          "lat": 44.711498,
+          "lon": -73.468716
+        },
+        {
+          "lat": 44.711574,
+          "lon": -73.468495
+        },
+        {
+          "lat": 44.711638,
+          "lon": -73.46817
+        },
+        {
+          "lat": 44.711677,
+          "lon": -73.467763
+        },
+        {
+          "lat": 44.711762,
+          "lon": -73.465792
+        },
+        {
+          "lat": 44.711887,
+          "lon": -73.462912
+        },
+        {
+          "lat": 44.71189,
+          "lon": -73.462536
+        },
+        {
+          "lat": 44.711872,
+          "lon": -73.46228
+        },
+        {
+          "lat": 44.711838,
+          "lon": -73.462069
+        },
+        {
+          "lat": 44.711832,
+          "lon": -73.462034
+        },
+        {
+          "lat": 44.711771,
+          "lon": -73.461778
+        },
+        {
+          "lat": 44.71172,
+          "lon": -73.461628
+        },
+        {
+          "lat": 44.711623,
+          "lon": -73.461383
+        },
+        {
+          "lat": 44.711488,
+          "lon": -73.461127
+        },
+        {
+          "lat": 44.711331,
+          "lon": -73.460905
+        },
+        {
+          "lat": 44.711133,
+          "lon": -73.460705
+        },
+        {
+          "lat": 44.710974,
+          "lon": -73.460575
+        },
+        {
+          "lat": 44.710837,
+          "lon": -73.460496
+        },
+        {
+          "lat": 44.710772,
+          "lon": -73.460459
+        },
+        {
+          "lat": 44.710523,
+          "lon": -73.460374
+        },
+        {
+          "lat": 44.710199,
+          "lon": -73.460285
+        },
+        {
+          "lat": 44.710077,
+          "lon": -73.46024
+        },
+        {
+          "lat": 44.71001,
+          "lon": -73.460203
+        }
+      ],
+      "tags": {
+        "destination": "Plattsburgh",
+        "destination:ref": "NY 22 South",
+        "highway": "motorway_link",
+        "junction:ref": "38S",
+        "lanes": "1",
+        "maxspeed:advisory": "40 mph",
+        "oneway": "yes",
+        "surface": "asphalt",
+        "tiger:cfcc": "A63",
+        "tiger:county": "Clinton, NY"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809723269,
+      "bounds": {
+        "minlat": 44.718468,
+        "minlon": -73.466109,
+        "maxlat": 44.718705,
+        "maxlon": -73.465681
+      },
+      "nodes": [
+        7570817706,
+        7570817708,
+        7570817703,
+        7570817704,
+        7570817706
+      ],
+      "geometry": [
+        {
+          "lat": 44.718499,
+          "lon": -73.465681
+        },
+        {
+          "lat": 44.718468,
+          "lon": -73.466078
+        },
+        {
+          "lat": 44.718674,
+          "lon": -73.466109
+        },
+        {
+          "lat": 44.718705,
+          "lon": -73.465713
+        },
+        {
+          "lat": 44.718499,
+          "lon": -73.465681
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "61",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Trade Road",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888214,
+      "bounds": {
+        "minlat": 44.71009,
+        "minlon": -73.456797,
+        "maxlat": 44.710575,
+        "maxlon": -73.456393
+      },
+      "nodes": [
+        7563731858,
+        7563731843,
+        7563731842,
+        7563731839,
+        7563731858
+      ],
+      "geometry": [
+        {
+          "lat": 44.710136,
+          "lon": -73.456393
+        },
+        {
+          "lat": 44.71009,
+          "lon": -73.456621
+        },
+        {
+          "lat": 44.710529,
+          "lon": -73.456797
+        },
+        {
+          "lat": 44.710575,
+          "lon": -73.456569
+        },
+        {
+          "lat": 44.710136,
+          "lon": -73.456393
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "21",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Monroe Way",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809722029,
+      "bounds": {
+        "minlat": 44.716855,
+        "minlon": -73.466369,
+        "maxlat": 44.717358,
+        "maxlon": -73.465918
+      },
+      "nodes": [
+        7570816041,
+        7570816043,
+        7570816042,
+        7570816040,
+        7570816041
+      ],
+      "geometry": [
+        {
+          "lat": 44.717333,
+          "lon": -73.466369
+        },
+        {
+          "lat": 44.717358,
+          "lon": -73.46598
+        },
+        {
+          "lat": 44.716881,
+          "lon": -73.465918
+        },
+        {
+          "lat": 44.716855,
+          "lon": -73.466306
+        },
+        {
+          "lat": 44.717333,
+          "lon": -73.466369
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "60",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Trade Road",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20064553,
+      "bounds": {
+        "minlat": 44.709137,
+        "minlon": -73.45508,
+        "maxlat": 44.711729,
+        "maxlon": -73.4535
+      },
+      "nodes": [
+        211909354,
+        1089907741,
+        211921829,
+        211921832,
+        211921835,
+        211921838,
+        211921841,
+        1089908196,
+        211921845,
+        211921848,
+        211921850,
+        211836992
+      ],
+      "geometry": [
+        {
+          "lat": 44.709137,
+          "lon": -73.454089
+        },
+        {
+          "lat": 44.7093615,
+          "lon": -73.4542043
+        },
+        {
+          "lat": 44.709509,
+          "lon": -73.45428
+        },
+        {
+          "lat": 44.711151,
+          "lon": -73.45504
+        },
+        {
+          "lat": 44.711282,
+          "lon": -73.45508
+        },
+        {
+          "lat": 44.711347,
+          "lon": -73.45507
+        },
+        {
+          "lat": 44.7114571,
+          "lon": -73.4549997
+        },
+        {
+          "lat": 44.7115268,
+          "lon": -73.4549159
+        },
+        {
+          "lat": 44.711605,
+          "lon": -73.454829
+        },
+        {
+          "lat": 44.711638,
+          "lon": -73.454762
+        },
+        {
+          "lat": 44.711706,
+          "lon": -73.45381
+        },
+        {
+          "lat": 44.711729,
+          "lon": -73.4535
+        }
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "name": "Weed Street",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "Weed",
+        "tiger:name_type": "St"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888521,
+      "bounds": {
+        "minlat": 44.709813,
+        "minlon": -73.456971,
+        "maxlat": 44.709987,
+        "maxlon": -73.456605
+      },
+      "nodes": [
+        7563741814,
+        7563741813,
+        7563741812,
+        7563741819,
+        7563741814
+      ],
+      "geometry": [
+        {
+          "lat": 44.709927,
+          "lon": -73.456971
+        },
+        {
+          "lat": 44.709987,
+          "lon": -73.456647
+        },
+        {
+          "lat": 44.709874,
+          "lon": -73.456605
+        },
+        {
+          "lat": 44.709813,
+          "lon": -73.456929
+        },
+        {
+          "lat": 44.709927,
+          "lon": -73.456971
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 881310238,
+      "bounds": {
+        "minlat": 44.708529,
+        "minlon": -73.460349,
+        "maxlat": 44.710841,
+        "maxlon": -73.459947
+      },
+      "nodes": [
+        211926940,
+        211843329,
+        211909330
+      ],
+      "geometry": [
+        {
+          "lat": 44.710841,
+          "lon": -73.460349
+        },
+        {
+          "lat": 44.71001,
+          "lon": -73.460203
+        },
+        {
+          "lat": 44.708529,
+          "lon": -73.459947
+        }
+      ],
+      "tags": {
+        "expressway": "yes",
+        "highway": "primary",
+        "name": "North Catherine Street",
+        "name_1": "State Highway 22",
+        "oneway": "yes",
+        "ref": "NY 22",
+        "tiger:cfcc": "A35",
+        "tiger:county": "Clinton, NY",
+        "tiger:name_base": "Catherine",
+        "tiger:name_base_1": "State Highway 22",
+        "tiger:name_direction_prefix": "N",
+        "tiger:name_type": "St"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888500,
+      "bounds": {
+        "minlat": 44.710235,
+        "minlon": -73.455364,
+        "maxlat": 44.710557,
+        "maxlon": -73.455126
+      },
+      "nodes": [
+        7563742021,
+        7563742018,
+        7563742019,
+        7563742016,
+        7563742021
+      ],
+      "geometry": [
+        {
+          "lat": 44.710557,
+          "lon": -73.455248
+        },
+        {
+          "lat": 44.710259,
+          "lon": -73.455126
+        },
+        {
+          "lat": 44.710235,
+          "lon": -73.455242
+        },
+        {
+          "lat": 44.710533,
+          "lon": -73.455364
+        },
+        {
+          "lat": 44.710557,
+          "lon": -73.455248
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "59",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Weed Street",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809722163,
+      "bounds": {
+        "minlat": 44.719216,
+        "minlon": -73.466195,
+        "maxlat": 44.719376,
+        "maxlon": -73.466102
+      },
+      "nodes": [
+        7570825917,
+        7570825916,
+        7570825919,
+        7570825918,
+        7570825917
+      ],
+      "geometry": [
+        {
+          "lat": 44.719223,
+          "lon": -73.466195
+        },
+        {
+          "lat": 44.719376,
+          "lon": -73.466157
+        },
+        {
+          "lat": 44.719369,
+          "lon": -73.466102
+        },
+        {
+          "lat": 44.719216,
+          "lon": -73.466141
+        },
+        {
+          "lat": 44.719223,
+          "lon": -73.466195
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 35971085,
+      "bounds": {
+        "minlat": 44.71109,
+        "minlon": -73.470191,
+        "maxlat": 44.7169826,
+        "maxlon": -73.4591467
+      },
+      "nodes": [
+        420445013,
+        211847497,
+        6004487767,
+        211899722,
+        211829909,
+        211899712,
+        1866461626,
+        211852136,
+        211856798
+      ],
+      "geometry": [
+        {
+          "lat": 44.7169826,
+          "lon": -73.4591467
+        },
+        {
+          "lat": 44.7149839,
+          "lon": -73.4629434
+        },
+        {
+          "lat": 44.7146546,
+          "lon": -73.4635433
+        },
+        {
+          "lat": 44.714416,
+          "lon": -73.463978
+        },
+        {
+          "lat": 44.7136179,
+          "lon": -73.46549
+        },
+        {
+          "lat": 44.713334,
+          "lon": -73.465995
+        },
+        {
+          "lat": 44.7117273,
+          "lon": -73.4689973
+        },
+        {
+          "lat": 44.711195,
+          "lon": -73.469992
+        },
+        {
+          "lat": 44.71109,
+          "lon": -73.470191
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "foot": "no",
+        "hgv": "designated",
+        "highway": "motorway",
+        "horse": "no",
+        "lanes": "2",
+        "maxspeed": "65 mph",
+        "name": "Adirondack Northway",
+        "oneway": "yes",
+        "ref": "I 87",
+        "surface": "asphalt",
+        "tiger:cfcc": "A15",
+        "tiger:county": "Clinton, NY:Essex, NY",
+        "tiger:name_base": "I-87",
+        "tiger:name_base_1": "Adirondack Northway"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887668,
+      "bounds": {
+        "minlat": 44.710374,
+        "minlon": -73.454988,
+        "maxlat": 44.710513,
+        "maxlon": -73.454819
+      },
+      "nodes": [
+        7563739010,
+        7563739009,
+        7563739004,
+        7563739003,
+        7563739010
+      ],
+      "geometry": [
+        {
+          "lat": 44.710482,
+          "lon": -73.454988
+        },
+        {
+          "lat": 44.710513,
+          "lon": -73.454877
+        },
+        {
+          "lat": 44.710405,
+          "lon": -73.454819
+        },
+        {
+          "lat": 44.710374,
+          "lon": -73.45493
+        },
+        {
+          "lat": 44.710482,
+          "lon": -73.454988
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888387,
+      "bounds": {
+        "minlat": 44.7096715,
+        "minlon": -73.4564277,
+        "maxlat": 44.7099019,
+        "maxlon": -73.4562574
+      },
+      "nodes": [
+        7563740080,
+        7563740082,
+        7563740076,
+        7563740078,
+        7563740080
+      ],
+      "geometry": [
+        {
+          "lat": 44.709682,
+          "lon": -73.4562574
+        },
+        {
+          "lat": 44.7096715,
+          "lon": -73.4563944
+        },
+        {
+          "lat": 44.7098914,
+          "lon": -73.4564277
+        },
+        {
+          "lat": 44.7099019,
+          "lon": -73.4562907
+        },
+        {
+          "lat": 44.709682,
+          "lon": -73.4562574
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "11",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Monroe Way",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 809722688,
+      "bounds": {
+        "minlat": 44.71989,
+        "minlon": -73.466147,
+        "maxlat": 44.71997,
+        "maxlon": -73.466029
+      },
+      "nodes": [
+        7570833606,
+        7570833605,
+        7570833601,
+        7570833600,
+        7570833606
+      ],
+      "geometry": [
+        {
+          "lat": 44.71989,
+          "lon": -73.466147
+        },
+        {
+          "lat": 44.71997,
+          "lon": -73.466147
+        },
+        {
+          "lat": 44.71997,
+          "lon": -73.466029
+        },
+        {
+          "lat": 44.71989,
+          "lon": -73.466029
+        },
+        {
+          "lat": 44.71989,
+          "lon": -73.466147
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887821,
+      "bounds": {
+        "minlat": 44.710283,
+        "minlon": -73.454915,
+        "maxlat": 44.710384,
+        "maxlon": -73.454756
+      },
+      "nodes": [
+        7563741132,
+        7563741135,
+        7563741134,
+        7563741129,
+        7563741132
+      ],
+      "geometry": [
+        {
+          "lat": 44.710283,
+          "lon": -73.454884
+        },
+        {
+          "lat": 44.710356,
+          "lon": -73.454915
+        },
+        {
+          "lat": 44.710384,
+          "lon": -73.454787
+        },
+        {
+          "lat": 44.710311,
+          "lon": -73.454756
+        },
+        {
+          "lat": 44.710283,
+          "lon": -73.454884
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "57",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Weed Street",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 1475041706,
+      "bounds": {
+        "minlat": 44.7093921,
+        "minlon": -73.4571008,
+        "maxlat": 44.7095076,
+        "maxlon": -73.4566941
+      },
+      "nodes": [
+        13532188170,
+        13532188165
+      ],
+      "geometry": [
+        {
+          "lat": 44.7093921,
+          "lon": -73.4571008
+        },
+        {
+          "lat": 44.7095076,
+          "lon": -73.4566941
+        }
+      ],
+      "tags": {
+        "highway": "service"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887051,
+      "bounds": {
+        "minlat": 44.709643,
+        "minlon": -73.455799,
+        "maxlat": 44.709999,
+        "maxlon": -73.455388
+      },
+      "nodes": [
+        7563741357,
+        7563741350,
+        7563741351,
+        7563741352,
+        7563741353,
+        7563741345,
+        7563741357
+      ],
+      "geometry": [
+        {
+          "lat": 44.709643,
+          "lon": -73.455692
+        },
+        {
+          "lat": 44.709962,
+          "lon": -73.455799
+        },
+        {
+          "lat": 44.709967,
+          "lon": -73.455766
+        },
+        {
+          "lat": 44.709953,
+          "lon": -73.455761
+        },
+        {
+          "lat": 44.709999,
+          "lon": -73.455489
+        },
+        {
+          "lat": 44.709695,
+          "lon": -73.455388
+        },
+        {
+          "lat": 44.709643,
+          "lon": -73.455692
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "52",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Boynton Avenue",
+        "brand": "Dollar Tree",
+        "brand:wikidata": "Q5289230",
+        "building": "yes",
+        "name": "Dollar Tree",
+        "shop": "variety_store"
+      }
+    },
+    {
+      "type": "way",
+      "id": 151387426,
+      "bounds": {
+        "minlat": 44.7130636,
+        "minlon": -73.4536717,
+        "maxlat": 44.7145338,
+        "maxlon": -73.4500602
+      },
+      "nodes": [
+        1642136889,
+        1642136887,
+        1642136890,
+        1642136892,
+        1642136889
+      ],
+      "geometry": [
+        {
+          "lat": 44.7134258,
+          "lon": -73.4500602
+        },
+        {
+          "lat": 44.7130636,
+          "lon": -73.4534363
+        },
+        {
+          "lat": 44.7141716,
+          "lon": -73.4536717
+        },
+        {
+          "lat": 44.7145338,
+          "lon": -73.4502956
+        },
+        {
+          "lat": 44.7134258,
+          "lon": -73.4500602
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 151387427,
+      "bounds": {
+        "minlat": 44.7115478,
+        "minlon": -73.4531738,
+        "maxlat": 44.7124521,
+        "maxlon": -73.4520442
+      },
+      "nodes": [
+        1642136883,
+        1642136877,
+        1642136875,
+        1642136880,
+        1642136883
+      ],
+      "geometry": [
+        {
+          "lat": 44.7124521,
+          "lon": -73.4522196
+        },
+        {
+          "lat": 44.7116537,
+          "lon": -73.4520442
+        },
+        {
+          "lat": 44.7115478,
+          "lon": -73.4529984
+        },
+        {
+          "lat": 44.7123463,
+          "lon": -73.4531738
+        },
+        {
+          "lat": 44.7124521,
+          "lon": -73.4522196
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "74",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Weed Street",
+        "building": "yes",
+        "nysgissam:nysaddresspointid": "CLIN024902"
+      }
+    },
+    {
+      "type": "way",
+      "id": 1475041705,
+      "bounds": {
+        "minlat": 44.7090994,
+        "minlon": -73.4566941,
+        "maxlat": 44.7096372,
+        "maxlon": -73.4557718
+      },
+      "nodes": [
+        13532188160,
+        13532188161,
+        13532188162,
+        13532188163,
+        13532188164,
+        13532188165,
+        13532188166,
+        13532188167,
+        13532188168,
+        13532188169
+      ],
+      "geometry": [
+        {
+          "lat": 44.7091712,
+          "lon": -73.4557718
+        },
+        {
+          "lat": 44.7090994,
+          "lon": -73.4565102
+        },
+        {
+          "lat": 44.7091183,
+          "lon": -73.4565736
+        },
+        {
+          "lat": 44.7091633,
+          "lon": -73.4566165
+        },
+        {
+          "lat": 44.7092505,
+          "lon": -73.4566451
+        },
+        {
+          "lat": 44.7095076,
+          "lon": -73.4566941
+        },
+        {
+          "lat": 44.7095497,
+          "lon": -73.4566717
+        },
+        {
+          "lat": 44.7095758,
+          "lon": -73.4566226
+        },
+        {
+          "lat": 44.7095903,
+          "lon": -73.4564959
+        },
+        {
+          "lat": 44.7096372,
+          "lon": -73.4559854
+        }
+      ],
+      "tags": {
+        "highway": "service"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808886817,
+      "bounds": {
+        "minlat": 44.70898,
+        "minlon": -73.459292,
+        "maxlat": 44.709048,
+        "maxlon": -73.459203
+      },
+      "nodes": [
+        7563743464,
+        7563743465,
+        7563743466,
+        7563743459,
+        7563743464
+      ],
+      "geometry": [
+        {
+          "lat": 44.709048,
+          "lon": -73.459203
+        },
+        {
+          "lat": 44.70898,
+          "lon": -73.459203
+        },
+        {
+          "lat": 44.70898,
+          "lon": -73.459292
+        },
+        {
+          "lat": 44.709048,
+          "lon": -73.459292
+        },
+        {
+          "lat": 44.709048,
+          "lon": -73.459203
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887168,
+      "bounds": {
+        "minlat": 44.7091845,
+        "minlon": -73.4565449,
+        "maxlat": 44.7095505,
+        "maxlon": -73.4560804
+      },
+      "nodes": [
+        365301721,
+        7563735083,
+        7563735082,
+        7563735085,
+        13532188157,
+        13532188158,
+        13532188159,
+        13532188156,
+        365301721
+      ],
+      "geometry": [
+        {
+          "lat": 44.7093744,
+          "lon": -73.4565046
+        },
+        {
+          "lat": 44.7095102,
+          "lon": -73.4565323
+        },
+        {
+          "lat": 44.7095505,
+          "lon": -73.4561422
+        },
+        {
+          "lat": 44.709248,
+          "lon": -73.4560804
+        },
+        {
+          "lat": 44.7092304,
+          "lon": -73.4562513
+        },
+        {
+          "lat": 44.7092113,
+          "lon": -73.4562474
+        },
+        {
+          "lat": 44.7091845,
+          "lon": -73.4565071
+        },
+        {
+          "lat": 44.7093703,
+          "lon": -73.4565449
+        },
+        {
+          "lat": 44.7093744,
+          "lon": -73.4565046
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "6",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Veterans Lane",
+        "amenity": "pharmacy",
+        "brand": "Kinney Drugs",
+        "brand:wikidata": "Q6414090",
+        "building": "yes",
+        "dispensing": "yes",
+        "healthcare": "pharmacy",
+        "name": "Kinney Drugs",
+        "url": "http://kinneydrugs.com/inside/storeDetails.php?id=938",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808886879,
+      "bounds": {
+        "minlat": 44.708901,
+        "minlon": -73.458412,
+        "maxlat": 44.709043,
+        "maxlon": -73.458203
+      },
+      "nodes": [
+        7563734955,
+        7563734957,
+        7563734960,
+        7563734947,
+        7563734949,
+        7563734952,
+        7563734954,
+        7563734940,
+        7563734955
+      ],
+      "geometry": [
+        {
+          "lat": 44.709039,
+          "lon": -73.458412
+        },
+        {
+          "lat": 44.709043,
+          "lon": -73.458329
+        },
+        {
+          "lat": 44.708993,
+          "lon": -73.458325
+        },
+        {
+          "lat": 44.708998,
+          "lon": -73.458211
+        },
+        {
+          "lat": 44.708907,
+          "lon": -73.458203
+        },
+        {
+          "lat": 44.708901,
+          "lon": -73.458339
+        },
+        {
+          "lat": 44.708993,
+          "lon": -73.458347
+        },
+        {
+          "lat": 44.70899,
+          "lon": -73.458408
+        },
+        {
+          "lat": 44.709039,
+          "lon": -73.458412
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "78",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Boynton Avenue",
+        "building": "house"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887202,
+      "bounds": {
+        "minlat": 44.710985,
+        "minlon": -73.453401,
+        "maxlat": 44.711211,
+        "maxlon": -73.45296
+      },
+      "nodes": [
+        7563736134,
+        7563736133,
+        7563736136,
+        7563736135,
+        7563736130,
+        7563736129,
+        7563736132,
+        7563736131,
+        7563736126,
+        7563736125,
+        7563736128,
+        7563736127,
+        7563736134
+      ],
+      "geometry": [
+        {
+          "lat": 44.711014,
+          "lon": -73.45296
+        },
+        {
+          "lat": 44.710985,
+          "lon": -73.453249
+        },
+        {
+          "lat": 44.711073,
+          "lon": -73.453266
+        },
+        {
+          "lat": 44.711067,
+          "lon": -73.453332
+        },
+        {
+          "lat": 44.711108,
+          "lon": -73.45334
+        },
+        {
+          "lat": 44.711102,
+          "lon": -73.453399
+        },
+        {
+          "lat": 44.711114,
+          "lon": -73.453401
+        },
+        {
+          "lat": 44.711118,
+          "lon": -73.45336
+        },
+        {
+          "lat": 44.711185,
+          "lon": -73.453373
+        },
+        {
+          "lat": 44.711211,
+          "lon": -73.453102
+        },
+        {
+          "lat": 44.711116,
+          "lon": -73.453084
+        },
+        {
+          "lat": 44.711126,
+          "lon": -73.452981
+        },
+        {
+          "lat": 44.711014,
+          "lon": -73.45296
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888546,
+      "bounds": {
+        "minlat": 44.709809,
+        "minlon": -73.45507,
+        "maxlat": 44.71001,
+        "maxlon": -73.454816
+      },
+      "nodes": [
+        7563742874,
+        7563742871,
+        7563742872,
+        7563742869,
+        7563742874
+      ],
+      "geometry": [
+        {
+          "lat": 44.709809,
+          "lon": -73.454986
+        },
+        {
+          "lat": 44.709963,
+          "lon": -73.45507
+        },
+        {
+          "lat": 44.71001,
+          "lon": -73.454899
+        },
+        {
+          "lat": 44.709855,
+          "lon": -73.454816
+        },
+        {
+          "lat": 44.709809,
+          "lon": -73.454986
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "53",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Weed Street",
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887534,
+      "bounds": {
+        "minlat": 44.708948,
+        "minlon": -73.457904,
+        "maxlat": 44.709091,
+        "maxlon": -73.457772
+      },
+      "nodes": [
+        7563735792,
+        7563735787,
+        7563735786,
+        7563735789,
+        7563735792
+      ],
+      "geometry": [
+        {
+          "lat": 44.708948,
+          "lon": -73.4579
+        },
+        {
+          "lat": 44.709089,
+          "lon": -73.457904
+        },
+        {
+          "lat": 44.709091,
+          "lon": -73.457777
+        },
+        {
+          "lat": 44.70895,
+          "lon": -73.457772
+        },
+        {
+          "lat": 44.708948,
+          "lon": -73.4579
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "74",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Boynton Avenue",
+        "building": "house"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888499,
+      "bounds": {
+        "minlat": 44.708923,
+        "minlon": -73.458151,
+        "maxlat": 44.709052,
+        "maxlon": -73.457966
+      },
+      "nodes": [
+        7563742025,
+        7563742022,
+        7563742023,
+        7563742020,
+        7563742025
+      ],
+      "geometry": [
+        {
+          "lat": 44.708923,
+          "lon": -73.45813
+        },
+        {
+          "lat": 44.709037,
+          "lon": -73.458151
+        },
+        {
+          "lat": 44.709052,
+          "lon": -73.457988
+        },
+        {
+          "lat": 44.708938,
+          "lon": -73.457966
+        },
+        {
+          "lat": 44.708923,
+          "lon": -73.45813
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "76",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Boynton Avenue",
+        "building": "house"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888001,
+      "bounds": {
+        "minlat": 44.708981,
+        "minlon": -73.459842,
+        "maxlat": 44.70905,
+        "maxlon": -73.459753
+      },
+      "nodes": [
+        7563744126,
+        7563744125,
+        7563744120,
+        7563744119,
+        7563744126
+      ],
+      "geometry": [
+        {
+          "lat": 44.708981,
+          "lon": -73.459753
+        },
+        {
+          "lat": 44.708981,
+          "lon": -73.459842
+        },
+        {
+          "lat": 44.70905,
+          "lon": -73.459842
+        },
+        {
+          "lat": 44.70905,
+          "lon": -73.459753
+        },
+        {
+          "lat": 44.708981,
+          "lon": -73.459753
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808888044,
+      "bounds": {
+        "minlat": 44.708857,
+        "minlon": -73.458719,
+        "maxlat": 44.708977,
+        "maxlon": -73.45842
+      },
+      "nodes": [
+        7563745109,
+        7563745108,
+        7563745103,
+        7563745102,
+        7563745105,
+        7563745104,
+        7563745109
+      ],
+      "geometry": [
+        {
+          "lat": 44.708959,
+          "lon": -73.458636
+        },
+        {
+          "lat": 44.708977,
+          "lon": -73.458437
+        },
+        {
+          "lat": 44.708882,
+          "lon": -73.45842
+        },
+        {
+          "lat": 44.708857,
+          "lon": -73.4587
+        },
+        {
+          "lat": 44.708967,
+          "lon": -73.458719
+        },
+        {
+          "lat": 44.708974,
+          "lon": -73.458639
+        },
+        {
+          "lat": 44.708959,
+          "lon": -73.458636
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "80",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Boynton Avenue",
+        "building": "house"
+      }
+    },
+    {
+      "type": "way",
+      "id": 808887353,
+      "bounds": {
+        "minlat": 44.708962,
+        "minlon": -73.457721,
+        "maxlat": 44.709063,
+        "maxlon": -73.457533
+      },
+      "nodes": [
+        7563740190,
+        7563740189,
+        7563740192,
+        7563740191,
+        7563740190
+      ],
+      "geometry": [
+        {
+          "lat": 44.708974,
+          "lon": -73.457533
+        },
+        {
+          "lat": 44.708962,
+          "lon": -73.457709
+        },
+        {
+          "lat": 44.70905,
+          "lon": -73.457721
+        },
+        {
+          "lat": 44.709063,
+          "lon": -73.457546
+        },
+        {
+          "lat": 44.708974,
+          "lon": -73.457533
+        }
+      ],
+      "tags": {
+        "addr:city": "Plattsburgh",
+        "addr:housenumber": "72",
+        "addr:postcode": "12901",
+        "addr:state": "NY",
+        "addr:street": "Boynton Avenue",
+        "building": "house"
+      }
+    }
+  ]
+}

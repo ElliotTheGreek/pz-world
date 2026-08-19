@@ -21,19 +21,12 @@ import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 import { findUserFolder } from '../src/lib/pzinstall.js';
-import { fetchArea, normalise, checkRadius } from '../src/sources/osm.js';
-import { bboxAround, Projection } from '../src/geo/project.js';
-import { classifyRoad, loadRoadProfile } from '../src/plan/roads.js';
-import { classifyFromTags } from '../src/plan/buildings.js';
-import { groundPixelFor, polygonArea } from '../src/plan/zones.js';
 import { parseWorldMapXml, encodeWorldMapBin } from '../src/formats/worldmap.js';
 import { MAP_NAME, MOD_ID, CANVAS_CELLS } from '../tools/make-canvas.js';
 
-const REQUEST = 'pzworld_request.txt';
-const STATUS = 'pzworld_status.txt';
-const DATA = 'pzworld_data.txt';
 const BUILD = 'pzworld_build.txt';
 const PROGRESS = 'pzworld_progress.txt';
+const LOCK = 'pzworld_helper.lock';
 
 /** getFileWriter/getFileReader resolve relative to Zomboid/Lua, not Zomboid. */
 export function exchangeDir(userFolder = findUserFolder()) {
@@ -55,23 +48,6 @@ function readRequest(file) {
   return out;
 }
 
-function writeStatus(dir, stage, progress, message) {
-  const body = [
-    'version 1',
-    `stage ${stage}`,
-    `progress ${progress.toFixed(3)}`,
-    `message ${message}`,
-    'end',
-    '',
-  ].join('\n');
-  // The status file is five short lines and is rewritten several times a
-  // second. Renaming it is not worth the risk described in atomicWrite: the mod
-  // tolerates a torn status (it re-reads next frame) and cannot tolerate the
-  // helper reporting `EPERM ... rename pzworld_status.txt.tmp` as the reason
-  // the build failed, which is what it did.
-  writeDirect(path.join(dir, STATUS), body);
-}
-
 function writeDirect(file, body) {
   try {
     fs.writeFileSync(file, body, 'utf8');
@@ -84,177 +60,18 @@ function writeDirect(file, body) {
 }
 
 /**
- * Write to a temporary file and rename, so the mod never reads a half-written
- * payload.
+ * Keep `worldmap.xml.bin` in step with the `worldmap.xml` beside it.
  *
- * Used for the payload only. The retry matters on Windows: the game polls these
- * files every frame, and if it happens to hold one open when the rename lands,
- * the call fails with `EPERM: operation not permitted`. Antivirus and OneDrive
- * scanners do the same thing to a file that has only just appeared. So the
- * retries back off instead of spinning for a fixed 30 ms each, and every
- * failure path ends in a plain in-place write: a torn read is recoverable
- * because the reader checks the payload's terminator, and a dead build is not.
- */
-function atomicWrite(file, body) {
-  const tmp = `${file}.tmp`;
-  try {
-    fs.writeFileSync(tmp, body, 'utf8');
-  } catch {
-    return writeDirect(file, body);
-  }
-
-  let renamed = false;
-  for (let attempt = 0; attempt < 8 && !renamed; attempt++) {
-    try {
-      fs.renameSync(tmp, file);
-      renamed = true;
-    } catch (err) {
-      if (err.code !== 'EPERM' && err.code !== 'EBUSY' && err.code !== 'EACCES') break;
-      // Back off: 10, 20, 40 ... ms, about a second in total.
-      const until = Date.now() + 10 * 2 ** attempt;
-      while (Date.now() < until) { /* spin; there is no sync sleep here */ }
-    }
-  }
-  if (renamed) return true;
-
-  const ok = writeDirect(file, body);
-  try {
-    fs.rmSync(tmp, { force: true });
-  } catch {
-    /* the temp file is harmless if it lingers */
-  }
-  return ok;
-}
-
-const fixed = (n) => (Math.round(n * 10) / 10).toString();
-
-/**
- * Metres east/north of the centre, unrotated. The mod applies the world bearing
- * itself, because choosing that bearing is part of what it shows the player.
- */
-function encodePoints(points, proj) {
-  const out = [];
-  for (const [lon, lat] of points) {
-    const [e, n] = proj.toLocalMetres(lon, lat);
-    out.push(`${fixed(e)},${fixed(n)}`);
-  }
-  return out.join(' ');
-}
-
-/** Keep anything whose bounding box touches the requested square. */
-function withinRadius(points, proj, radius) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const [lon, lat] of points) {
-    const [e, n] = proj.toLocalMetres(lon, lat);
-    if (e < minX) minX = e;
-    if (n < minY) minY = n;
-    if (e > maxX) maxX = e;
-    if (n > maxY) maxY = n;
-  }
-  return maxX >= -radius && minX <= radius && maxY >= -radius && minY <= radius;
-}
-
-export async function handleRequest(req, dir, { log = () => {}, cacheDir }) {
-  const lat = Number(req.lat);
-  const lon = Number(req.lon);
-  const radius = Number(req.radius ?? 900);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error('request has no lat/lon');
-  checkRadius(radius);
-
-  log(`request: ${lat}, ${lon} radius ${radius}`);
-  writeStatus(dir, 'fetching', 0.05, 'Contacting OpenStreetMap');
-
-  const bbox = bboxAround(lat, lon, radius);
-  const raw = await fetchArea(bbox, { cacheDir, log });
-
-  writeStatus(dir, 'parsing', 0.55, 'Reading map data');
-  const features = normalise(raw);
-  const proj = new Projection({ lat, lon, metresPerTile: 1, bearing: 0 });
-  const roadProfile = loadRoadProfile();
-
-  const lines = [];
-  lines.push('version 1');
-  lines.push('status ok');
-  lines.push(`center ${lon} ${lat}`);
-  lines.push(`radius ${radius}`);
-
-  const roads = [];
-  for (const r of features.roads) {
-    const spec = classifyRoad(r, roadProfile);
-    if (!spec) continue;
-    if (!withinRadius(r.points, proj, radius * 1.2)) continue;
-    roads.push({ spec, points: r.points });
-  }
-
-  const buildings = [];
-  for (const b of features.buildings) {
-    if (!withinRadius(b.points, proj, radius)) continue;
-    // Area in square metres, for the size fallback when tags say nothing.
-    const ring = b.points.map(([plon, plat]) => proj.toLocalMetres(plon, plat));
-    const cls = classifyFromTags(b.tags, polygonArea(ring));
-    buildings.push({ cls, levels: b.levels ?? 1, points: b.points });
-  }
-
-  const ground = [];
-  for (const g of features.ground) {
-    const pixel = groundPixelFor(g.tags);
-    if (pixel === null) continue;
-    if (!withinRadius(g.points, proj, radius * 1.2)) continue;
-    ground.push({ pixel, points: g.points });
-  }
-
-  // Largest ground polygons first so the mod can paint them in order and let
-  // smaller ones win, the same rule the offline planner uses.
-  ground.sort(
-    (a, b) =>
-      polygonArea(b.points.map(([lo, la]) => proj.toLocalMetres(lo, la))) -
-      polygonArea(a.points.map(([lo, la]) => proj.toLocalMetres(lo, la))),
-  );
-
-  lines.push(`count ${roads.length} ${buildings.length} ${ground.length}`);
-  lines.push('');
-
-  writeStatus(dir, 'encoding', 0.8, 'Preparing the world');
-  for (const r of roads) {
-    lines.push(`R ${r.spec.cls} ${r.spec.width} ${r.points.length}`);
-    lines.push(encodePoints(r.points, proj));
-  }
-  for (const b of buildings) {
-    lines.push(`B ${b.cls} ${b.levels} ${b.points.length}`);
-    lines.push(encodePoints(b.points, proj));
-  }
-  for (const g of ground) {
-    lines.push(`G ${g.pixel} ${g.points.length}`);
-    lines.push(encodePoints(g.points, proj));
-  }
-  lines.push('end');
-  lines.push('');
-
-  atomicWrite(path.join(dir, DATA), lines.join('\n'));
-  writeStatus(dir, 'done', 1, 'Map data ready');
-  log(`wrote ${roads.length} roads, ${buildings.length} buildings, ${ground.length} areas`);
-  return { roads: roads.length, buildings: buildings.length, ground: ground.length };
-}
-
-/**
- * Compile the map the mod drew into the form the game will actually read.
+ * The build writes both, and writes them so that compiling one gives exactly
+ * the other (`assertXmlMatchesBin` in src/formats/worldmap.js proves it per
+ * build). So in the normal case this is a no-op that rewrites identical bytes.
  *
- * The mod writes `worldmap.xml` during the build, because Lua can write text.
- * Project Zomboid does not read that file when a `.bin` exists beside it — and
- * when no `.bin` exists it reads it with `WorldMapXML`, which is broken and
- * throws out of every feature (see src/formats/worldmap.js). Lua cannot write
- * the binary either: `getModFileWriter` hands back an `OutputStreamWriter` over
- * UTF-8, so any byte above 0x7F comes out as two.
+ * It still earns its place: the `.xml` is the file the game finds by name at
+ * mod-scan time, and if anything ever edits it, the `.bin` the game actually
+ * draws from would otherwise silently disagree with it.
  *
- * So this is the same division of labour as the Overpass fetch — the helper is
- * the half of the mod that is allowed to touch bytes.
- *
- * Watched by modification time rather than driven by a message, so it also
- * covers the second build the server state runs during loading, and a map
- * regenerated while the game is up.
+ * Watched by modification time rather than driven by a message, because the
+ * build is a separate process and there is no message to wait for.
  */
 export function compileMapIfChanged(state, { log = () => {}, userFolder } = {}) {
   const xmlFile = path.join(
@@ -410,16 +227,70 @@ function handleBuildOrder(order, dir, { log }) {
   });
 }
 
+/**
+ * Claim the exchange directory for this process.
+ *
+ * The lock records a pid, and startup checks whether that pid is still alive
+ * rather than trusting the file: a helper killed with the window close button
+ * never gets to clean up, and a stale lock that refuses every future run is
+ * worse than no lock at all.
+ *
+ * @returns {(() => void)|null} a release function, or null if somebody else holds it
+ */
+function takeLock(dir, log) {
+  const file = path.join(dir, LOCK);
+  try {
+    const held = Number(fs.readFileSync(file, 'utf8').trim());
+    if (Number.isInteger(held) && held > 0 && held !== process.pid) {
+      let alive = false;
+      try {
+        process.kill(held, 0);
+        alive = true;
+      } catch (err) {
+        alive = err.code === 'EPERM'; // running, just not ours to signal
+      }
+      if (alive) {
+        log(`another pz-world helper is already running (pid ${held}).`);
+        log('  Close that one first — two helpers run two builds over the same files.');
+        return null;
+      }
+      log(`clearing the lock left by pid ${held}, which is gone`);
+    }
+  } catch {
+    /* no lock file, or an unreadable one: take it */
+  }
+  try {
+    fs.writeFileSync(file, String(process.pid), 'utf8');
+  } catch {
+    return () => {}; // cannot lock; better to run than to refuse
+  }
+  return () => {
+    try {
+      if (Number(fs.readFileSync(file, 'utf8').trim()) === process.pid) fs.rmSync(file, { force: true });
+    } catch {
+      /* someone else's now, or already gone */
+    }
+  };
+}
+
 export async function serve({ once = false, log = () => {}, userFolder } = {}) {
+  let releaseLock = null;
   const dir = exchangeDir(userFolder);
-  const reqFile = path.join(dir, REQUEST);
   const buildFile = path.join(dir, BUILD);
-  const cacheDir = path.join(path.dirname(new URL(import.meta.url).pathname.slice(1)), '..', 'cache');
+
+  // One helper, or none. A second instance is not a redundant spare: both see
+  // the same build order, both spawn a build, and the two builds write the same
+  // cells and the same map at the same time. Measured with four helpers up by
+  // accident — three concurrent builds, 1.3 GB each, and a progress file being
+  // rewritten by all of them, which reads from the game as a hang.
+  releaseLock = takeLock(dir, log);
+  if (!releaseLock) return null;
+  const drop = () => { if (releaseLock) { releaseLock(); releaseLock = null; } };
+  for (const signal of ['exit', 'SIGINT', 'SIGTERM']) process.once(signal, drop);
 
   log(`pz-world helper watching ${dir}`);
   log('  leave this running: it is what builds the world when you press "Build this world"');
-  // Clear a stale request or order so an old one is not answered on startup.
-  if (fs.existsSync(reqFile)) fs.rmSync(reqFile);
+  // Clear a stale order so an old one is not answered on startup.
   if (fs.existsSync(buildFile)) fs.writeFileSync(buildFile, '');
 
   const state = { mapStamp: null };
@@ -446,27 +317,11 @@ export async function serve({ once = false, log = () => {}, userFolder } = {}) {
       }
     }
 
-    if (!fs.existsSync(reqFile)) {
-      // Nothing to fetch, so this is the moment to notice a finished map.
-      try {
-        compileMapIfChanged(state, { log, userFolder });
-      } catch (err) {
-        log(`map watcher: ${err.message}`);
-      }
-      return;
-    }
-    const req = readRequest(reqFile);
-    if (!req) return; // still being written
-    busy = true;
-    fs.rmSync(reqFile);
+    // No build running, so this is the moment to notice a finished map.
     try {
-      await handleRequest(req, dir, { log, cacheDir });
+      compileMapIfChanged(state, { log, userFolder });
     } catch (err) {
-      log(`error: ${err.message}`);
-      writeStatus(dir, 'error', 0, err.message);
-    } finally {
-      busy = false;
-      if (once) process.exit(0);
+      log(`map watcher: ${err.message}`);
     }
   };
 

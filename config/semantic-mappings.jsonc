@@ -1,0 +1,304 @@
+// Semantic feature/context -> validated Project Zomboid asset mappings.
+//
+// Emitters ask for semantic keys and context; tile names belong here. Every variant is
+// checked against library/asset-inventory.json by tools/verify-semantic-registry.mjs.
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "gameVersion": "42.20.2",
+    "coordinateSystem": "screen cardinal directions; +x east, +y south",
+    "probability": "weight is relative within a mapping; chance is placement probability",
+    "fallback": "fallback names another mapping id and must terminate without a cycle"
+  },
+  "mappings": [
+    // ---- Base surfaces ---------------------------------------------------
+    { "id": "surface.grass.dark", "semantic": "surface.base", "mandatory": true, "when": { "surface": "grass" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_16", "weight": 1 }] },
+    { "id": "surface.grass.light", "semantic": "surface.base", "mandatory": true, "when": { "surface": "grassLight" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_32", "weight": 1 }] },
+    { "id": "surface.meadow", "semantic": "surface.base", "mandatory": true, "when": { "surface": "meadow" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_0", "weight": 1 }] },
+    { "id": "surface.dirt", "semantic": "surface.base", "mandatory": true, "when": { "surface": "dirt" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_64", "weight": 1 }] },
+    { "id": "surface.sand", "semantic": "surface.base", "mandatory": true, "when": { "surface": "sand" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_80", "weight": 1 }] },
+    { "id": "surface.gravel", "semantic": "surface.base", "mandatory": true, "when": { "surface": "gravel" }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_54", "weight": 1 }] },
+    { "id": "surface.road", "semantic": "surface.base", "mandatory": true, "when": { "surface": "road" }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_86", "weight": 1 }] },
+    { "id": "surface.water", "semantic": "surface.base", "mandatory": true, "when": { "surface": "water" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_02_0", "weight": 1 }] },
+    { "id": "surface.pavement", "semantic": "surface.base", "mandatory": true, "when": { "surface": "pavement" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "floors_exterior_tilesandstone_01_3", "weight": 1 }] },
+
+    // ---- OSM site and land-use treatment --------------------------------
+    // These rules carry planning metadata rather than a loose sprite. `pixel` drives
+    // the biome/zone map, `surface` and `owner` constrain authored ground and
+    // vegetation, and `parking` permits vehicle stalls only on an actual mapped lot.
+    { "id": "site.parking.paved", "semantic": "site.treatment", "priority": 20, "when": { "siteClass": "parking-paved" }, "pixel": 200, "surface": "road", "owner": "built", "parking": true, "variants": [], "exclusions": ["A parking polygon is authored as a hard surface and ParkingStall zones, not as one loose tile."] },
+    { "id": "site.parking.gravel", "semantic": "site.treatment", "priority": 20, "when": { "siteClass": "parking-gravel" }, "pixel": 200, "surface": "gravel", "owner": "built", "parking": true, "variants": [], "exclusions": ["A gravel parking polygon is authored as a complete surface and ParkingStall zones."] },
+    { "id": "site.water", "semantic": "site.treatment", "when": { "siteClass": "water" }, "pixel": 0, "surface": "water", "owner": "water", "variants": [], "exclusions": ["Water is emitted through the base-surface registry mapping."] },
+    { "id": "site.forest", "semantic": "site.treatment", "when": { "siteClass": "forest" }, "pixel": 255, "owner": "natural", "variants": [], "exclusions": ["Forest uses measured procedural vegetation assets."] },
+    { "id": "site.scrub", "semantic": "site.treatment", "when": { "siteClass": "scrub" }, "pixel": 217, "owner": "natural", "variants": [], "exclusions": ["Scrub uses measured procedural vegetation assets."] },
+    { "id": "site.farmland", "semantic": "site.treatment", "when": { "siteClass": "farmland" }, "pixel": 141, "owner": "farmland", "variants": [], "exclusions": ["Farmland reserves its squares from generic woodland for crop-aware treatment."] },
+    { "id": "site.farm-managed", "semantic": "site.treatment", "when": { "siteClass": ["farmyard", "meadow"] }, "pixel": 128, "owner": "managed", "variants": [], "exclusions": ["Managed farm ground uses contextual natural surfaces."] },
+    { "id": "site.orchard", "semantic": "site.treatment", "when": { "siteClass": "orchard" }, "pixel": 204, "owner": "farmland", "variants": [], "exclusions": ["Orchards retain agricultural ownership and reject generic woodland."] },
+    { "id": "site.managed-green", "semantic": "site.treatment", "when": { "siteClass": "managed-green" }, "pixel": 64, "owner": "managed", "variants": [], "exclusions": ["Parks, pitches and managed grass use the thinned managed vegetation pool."] },
+    { "id": "site.built-district", "semantic": "site.treatment", "when": { "siteClass": "built-district" }, "pixel": 115, "owner": "managed", "variants": [], "exclusions": ["District polygons remain permeable ground; actual structures and access ways claim hard surfaces."] },
+    { "id": "site.cleared", "semantic": "site.treatment", "when": { "siteClass": "cleared" }, "pixel": 254, "surface": "dirt", "owner": "built", "variants": [], "exclusions": ["Construction and quarry ground suppress vegetation without inventing structures."] },
+
+    // ---- Building surroundings ------------------------------------------
+    // `radius` expands beyond the placed prefab rectangle. These are authored site
+    // treatments, not loose sprites; occupancy checks keep them out of neighboring
+    // structures while the owner suppresses incompatible generic vegetation.
+    { "id": "building.surroundings.vehicle-apron", "semantic": "building.surroundings", "priority": 20, "when": { "buildingClass": ["gas_station", "fire", "garage", "industrial", "warehouse"] }, "surface": "road", "owner": "built", "radius": 3, "vehicleAccess": true, "variants": [], "exclusions": ["Vehicle aprons are contiguous authored ground selected around complete prefabs."] },
+    { "id": "building.surroundings.hardstand", "semantic": "building.surroundings", "priority": 10, "when": { "buildingClass": ["grocery", "retail", "restaurant", "bar", "office", "medical", "police", "education", "church", "civic", "apartment"] }, "surface": "pavement", "owner": "built", "radius": 2, "vehicleAccess": false, "variants": [], "exclusions": ["Pedestrian hardstand is authored around complete prefabs rather than emitted as a loose object."] },
+    { "id": "building.surroundings.permeable-yard", "semantic": "building.surroundings", "when": { "buildingClass": ["house", "farm", "shed", "unknown"] }, "surface": null, "owner": "managed", "radius": 2, "vehicleAccess": false, "variants": [], "exclusions": ["Permeable yards retain their compatible land-cover material and use managed vegetation."] },
+    { "id": "building.surroundings.fallback", "semantic": "building.surroundings", "when": {}, "surface": null, "owner": "managed", "radius": 1, "vehicleAccess": false, "variants": [], "exclusions": ["Unknown structure contexts retain permeable ground rather than inventing pavement."] },
+
+    // ---- OSM highway classes --------------------------------------------
+    { "id": "road.surface.asphalt", "semantic": "road.surface", "when": { "roadClass": ["motorway", "trunk", "primary", "secondary", "residential", "service"] }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_86", "weight": 1 }] },
+    { "id": "road.surface.cycleway", "semantic": "road.surface", "when": { "roadClass": "cycleway" }, "variants": [], "fallback": "road.surface.asphalt-fallback" },
+    { "id": "road.surface.asphalt-fallback", "semantic": "road.surface", "when": { "fallback": true }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_86", "weight": 1 }] },
+    { "id": "road.surface.track", "semantic": "road.surface", "when": { "roadClass": "track" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_64", "weight": 1 }] },
+    { "id": "road.surface.footway", "semantic": "road.surface", "when": { "roadClass": "footway" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "floors_exterior_tilesandstone_01_3", "weight": 1 }] },
+
+    // A kerb's orientation says where the carriageway lies from the kerb square.
+    { "id": "road.curb.unedged-class", "semantic": "road.curb", "priority": 100, "when": { "roadClass": ["service", "track", "footway", "cycleway"] }, "variants": [], "exclusions": ["These narrow/rural classes do not receive implicit urban curbs."] },
+    { "id": "road.curb.east", "semantic": "road.curb", "when": { "orientation": "east", "topology": ["edge", "straight", "end"] }, "layer": "FloorFurniture", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_9", "family": "street_curbs_01", "orientation": "east", "weight": 1 }] },
+    { "id": "road.curb.west", "semantic": "road.curb", "when": { "orientation": "west", "topology": ["edge", "straight", "end"] }, "layer": "FloorFurniture", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_11", "family": "street_curbs_01", "orientation": "west", "weight": 1 }] },
+    { "id": "road.curb.north", "semantic": "road.curb", "when": { "orientation": "north", "topology": ["edge", "straight", "end"] }, "layer": "FloorFurniture", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_10", "family": "street_curbs_01", "orientation": "north", "weight": 1 }] },
+    { "id": "road.curb.south", "semantic": "road.curb", "when": { "orientation": "south", "topology": ["edge", "straight", "end"] }, "layer": "FloorFurniture", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_8", "family": "street_curbs_01", "orientation": "south", "weight": 1 }] },
+    { "id": "road.curb.diagonal.ne-sw", "semantic": "road.curb", "when": { "orientation": "ne-sw", "topology": "diagonal" }, "layer": "FloorOverlay", "role": "road-edge", "contextRequired": true, "variants": [
+      { "tile": "street_curbs_01_diag_0", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_1", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_3", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_4", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_5", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 }
+    ] },
+    { "id": "road.curb.diagonal.ne-sw.a", "semantic": "road.curb", "priority": 10, "when": { "orientation": "ne-sw", "topology": "diagonal", "facing": "a" }, "layer": "FloorOverlay", "role": "road-edge", "contextRequired": true, "variants": [
+      { "tile": "street_curbs_01_diag_0", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_1", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_3", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_4", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_5", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 }
+    ] },
+    { "id": "road.curb.diagonal.ne-sw.b", "semantic": "road.curb", "when": { "orientation": "ne-sw", "topology": "diagonal", "facing": "b" }, "layer": "FloorOverlay", "role": "road-edge", "contextRequired": true, "variants": [
+      { "tile": "street_curbs_01_diag_40", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_41", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_42", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_43", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_44", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 },
+      { "tile": "street_curbs_01_diag_45", "family": "street_curbs_01_diag", "orientation": "ne-sw", "weight": 1 }
+    ] },
+    { "id": "road.curb.diagonal.nw-se", "semantic": "road.curb", "when": { "orientation": "nw-se", "topology": "diagonal" }, "layer": "FloorOverlay", "role": "road-edge", "contextRequired": true, "variants": [
+      { "tile": "street_curbs_01_diag_2_0", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_1", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_2", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_3", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_4", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_5", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 }
+    ] },
+    { "id": "road.curb.diagonal.nw-se.a", "semantic": "road.curb", "priority": 10, "when": { "orientation": "nw-se", "topology": "diagonal", "facing": "a" }, "layer": "FloorOverlay", "role": "road-edge", "contextRequired": true, "variants": [
+      { "tile": "street_curbs_01_diag_2_0", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_1", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_2", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_3", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_4", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_5", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 }
+    ] },
+    { "id": "road.curb.diagonal.nw-se.b", "semantic": "road.curb", "when": { "orientation": "nw-se", "topology": "diagonal", "facing": "b" }, "layer": "FloorOverlay", "role": "road-edge", "contextRequired": true, "variants": [
+      { "tile": "street_curbs_01_diag_2_40", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_41", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_42", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_43", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_44", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 },
+      { "tile": "street_curbs_01_diag_2_45", "family": "street_curbs_01_diag_2", "orientation": "nw-se", "weight": 1 }
+    ] },
+    // Corner facings are inferred from 13,000+ vanilla placements: the named
+    // directions identify the two neighboring carriageway sides.
+    { "id": "road.curb.corner.se", "semantic": "road.curb", "priority": 20, "when": { "orientation": "south-east", "topology": "corner", "intersectionBoundary": true }, "layer": "FloorOverlay", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_0", "family": "street_curbs_01", "orientation": "south-east", "weight": 1 }] },
+    { "id": "road.curb.corner.nw", "semantic": "road.curb", "priority": 20, "when": { "orientation": "north-west", "topology": "corner", "intersectionBoundary": true }, "layer": "FloorOverlay", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_2", "family": "street_curbs_01", "orientation": "north-west", "weight": 1 }] },
+    { "id": "road.curb.corner.sw", "semantic": "road.curb", "priority": 20, "when": { "orientation": "south-west", "topology": "corner", "intersectionBoundary": true }, "layer": "FloorOverlay", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_4", "family": "street_curbs_01", "orientation": "south-west", "weight": 1 }] },
+    { "id": "road.curb.corner.ne", "semantic": "road.curb", "priority": 20, "when": { "orientation": "north-east", "topology": "corner", "intersectionBoundary": true }, "layer": "FloorOverlay", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_5", "family": "street_curbs_01", "orientation": "north-east", "weight": 1 }] },
+    { "id": "road.curb.unsupported-topology", "semantic": "road.curb", "when": { "topology": ["tee", "cross", "roundabout"] }, "contextRequired": true, "variants": [], "exclusions": ["Junction centres are clear zones; curb artwork belongs only on their complete outer boundary."] },
+
+    // Direction is the line's run direction, not its facing direction.
+    { "id": "road.marking.ns", "semantic": "road.marking.centre", "when": { "orientation": "north-south", "topology": "straight" }, "layer": "FloorOverlay", "role": "road-marking", "contextRequired": true, "variants": [{ "tile": "street_trafficlines_01_4", "family": "street_trafficlines_01", "orientation": "north-south", "weight": 1 }] },
+    // `street_trafficlines_01_16` used to stand here and it is a north-south
+    // sprite: measured on 32,596 vanilla placements at 0.98 confidence. Every
+    // east-west street in a generated city therefore carried a line running the
+    // wrong way. `_6` is `_4`'s own east-west partner in the same four-tile
+    // group, measured east-west on 40,572 placements.
+    { "id": "road.marking.ew", "semantic": "road.marking.centre", "when": { "orientation": "east-west", "topology": "straight" }, "layer": "FloorOverlay", "role": "road-marking", "contextRequired": true, "variants": [{ "tile": "street_trafficlines_01_6", "family": "street_trafficlines_01", "orientation": "east-west", "weight": 1 }] },
+    // Stop bars across a junction mouth. `_34`/`_32` are the only pair in the
+    // family whose observed context is dominated by junctions rather than by the
+    // middle of a straight: 903 cross and 705 corner placements out of 4,616.
+    { "id": "road.marking.stopline.ns", "semantic": "road.marking.junction", "when": { "orientation": "north-south" }, "layer": "FloorOverlay", "role": "road-marking", "contextRequired": true, "variants": [{ "tile": "street_trafficlines_01_34", "family": "street_trafficlines_01", "orientation": "north-south", "weight": 1 }] },
+    { "id": "road.marking.stopline.ew", "semantic": "road.marking.junction", "when": { "orientation": "east-west" }, "layer": "FloorOverlay", "role": "road-marking", "contextRequired": true, "variants": [{ "tile": "street_trafficlines_01_32", "family": "street_trafficlines_01", "orientation": "east-west", "weight": 1 }] },
+    { "id": "road.marking.junction.none", "semantic": "road.marking.junction", "when": {}, "variants": [], "exclusions": ["A junction mouth with no cardinal approach has no validated stop-bar artwork."] },
+    { "id": "road.marking.junction", "semantic": "road.marking.centre", "when": { "topology": ["corner", "tee", "cross", "roundabout"] }, "contextRequired": true, "variants": [], "exclusions": ["Straight centre lines are suppressed through junction conflict areas."] },
+    { "id": "road.marking.none", "semantic": "road.marking.centre", "priority": 100, "when": { "markings": "no" }, "variants": [], "exclusions": ["OSM explicitly disables lane markings."] },
+
+    // Limited-access highway bands deliberately do not reuse urban kerbs or
+    // sidewalks. The gravel shoulder and planted median/verge remain legible
+    // even where a ramp overlaps a mainline or a bend cannot safely use a
+    // cardinal line sprite.
+    // A limited-access road's hard shoulder is paved. Laying aggregate there put
+    // a two-square tan band down each side of every carriageway, and because the
+    // two directions of an interstate are separate OSM ways whose shoulders
+    // overlap in the middle, it filled the gap between them as well: the whole
+    // road read as one enormous gravel yard with asphalt strips in it. A rural
+    // road's shoulder really is aggregate and keeps `road.rural.band`.
+    { "id": "road.highway.shoulder", "semantic": "road.highway.band", "when": { "band": "shoulder" }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_86", "weight": 1 }] },
+    { "id": "road.highway.median", "semantic": "road.highway.band", "when": { "band": "median" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_16", "weight": 1 }] },
+    { "id": "road.highway.verge", "semantic": "road.highway.band", "when": { "band": "verge" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_32", "weight": 1 }] },
+    // The busiest line pair in the shipped maps — 44,134 and 58,065 placements,
+    // both almost entirely on-road — so a motorway reads as a motorway rather
+    // than as a wide residential street with the same stripe down it.
+    { "id": "road.highway.line.ns", "semantic": "road.highway.marking", "when": { "orientation": "north-south" }, "layer": "FloorOverlay", "role": "road-marking", "contextRequired": true, "variants": [{ "tile": "street_trafficlines_01_20", "family": "street_trafficlines_01", "orientation": "north-south", "weight": 1 }] },
+    { "id": "road.highway.line.ew", "semantic": "road.highway.marking", "when": { "orientation": "east-west" }, "layer": "FloorOverlay", "role": "road-marking", "contextRequired": true, "variants": [{ "tile": "street_trafficlines_01_22", "family": "street_trafficlines_01", "orientation": "east-west", "weight": 1 }] },
+
+    // Rural roads use soft ground bands and material-specific surfaces. These
+    // deliberately avoid urban curb and sidewalk families. Ditches are painted
+    // as darker natural ground because no continuous, arbitrary-bearing ditch
+    // furniture family is safe in the installed catalogue.
+    { "id": "road.rural.surface.paved", "semantic": "road.rural.surface", "when": { "material": "paved" }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_86", "weight": 1 }] },
+    { "id": "road.rural.surface.gravel", "semantic": "road.rural.surface", "when": { "material": "gravel" }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_54", "weight": 1 }] },
+    { "id": "road.rural.surface.dirt", "semantic": "road.rural.surface", "when": { "material": "dirt" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_64", "weight": 1 }] },
+    { "id": "road.rural.shoulder", "semantic": "road.rural.band", "when": { "band": "shoulder" }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_54", "weight": 1 }] },
+    { "id": "road.rural.ditch", "semantic": "road.rural.band", "when": { "band": "ditch" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_16", "weight": 1 }] },
+    { "id": "road.rural.verge", "semantic": "road.rural.band", "when": { "band": "verge" }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "blends_natural_01_32", "weight": 1 }] },
+
+    // Sidewalk/verge decisions use procedural built-up context in addition to OSM.
+    // Full-square pavement variants form the walkable body; the renderer adds
+    // measured grass blend overlays on exposed outer edges and corners.
+    // Weights are measured, not chosen. Walking outward from all 67,254 kerb
+    // squares in the sixteen busiest Muldraugh cells, the pavement beside a kerb
+    // is `_3` 80.9% of the time, then `_5` 8.9%, `_6` 3.3%, `_7` 1.3%, `_1` 1.3%
+    // and `_0` 0.9%. `_2` and `_4` are the red brick paviors and together account
+    // for 1.0%; giving them weights of 2 and 1 out of 11 put brick on a quarter
+    // of every pavement in the world and it read as roof tile on the ground.
+    { "id": "road.sidewalk.concrete", "semantic": "road.sidewalk", "when": { "builtUp": true, "sidewalk": ["yes", "left", "right", "both", "implicit"], "surface": ["concrete", "cement", "paved", ""] }, "layer": "Floor", "role": "ground-or-floor", "variants": [
+      { "tile": "floors_exterior_tilesandstone_01_3", "weight": 809 },
+      { "tile": "floors_exterior_tilesandstone_01_5", "weight": 89 },
+      { "tile": "floors_exterior_tilesandstone_01_6", "weight": 33 },
+      { "tile": "floors_exterior_tilesandstone_01_7", "weight": 13 },
+      { "tile": "floors_exterior_tilesandstone_01_1", "weight": 13 },
+      { "tile": "floors_exterior_tilesandstone_01_0", "weight": 9 }
+    ] },
+    // Only where OSM actually says brick or setts. `_2` and `_4` are the red
+    // paviors; vanilla uses them on 1.0% of pavement squares, which is what a
+    // deliberately paved forecourt looks like rather than a whole street.
+    { "id": "road.sidewalk.pavers", "semantic": "road.sidewalk", "when": { "builtUp": true, "sidewalk": ["yes", "left", "right", "both", "implicit"], "surface": ["paving_stones", "sett", "cobblestone", "brick"] }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "floors_exterior_tilesandstone_01_2", "weight": 3 }, { "tile": "floors_exterior_tilesandstone_01_4", "weight": 2 }, { "tile": "floors_exterior_tilesandstone_01_0", "weight": 1 }] },
+    { "id": "road.sidewalk.asphalt", "semantic": "road.sidewalk", "when": { "builtUp": true, "sidewalk": ["yes", "left", "right", "both", "implicit"], "surface": ["asphalt", "tarmac"] }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_86", "weight": 1 }] },
+    { "id": "road.sidewalk.gravel", "semantic": "road.sidewalk", "when": { "builtUp": true, "sidewalk": ["yes", "left", "right", "both", "implicit"], "surface": ["gravel", "fine_gravel", "compacted"] }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_54", "weight": 1 }] },
+    { "id": "road.sidewalk.paved", "semantic": "road.sidewalk", "when": { "builtUp": true, "sidewalk": ["yes", "left", "right", "both", "implicit"] }, "layer": "Floor", "role": "ground-or-floor", "variants": [{ "tile": "floors_exterior_tilesandstone_01_3", "weight": 1 }] },
+    { "id": "road.sidewalk.none", "semantic": "road.sidewalk", "when": { "sidewalk": "no" }, "variants": [], "exclusions": ["OSM explicitly says no sidewalk."] },
+    { "id": "road.sidewalk.rural", "semantic": "road.sidewalk", "when": { "builtUp": false }, "variants": [], "exclusions": ["Implicit sidewalks are excluded outside the built-up mask."] },
+
+    // Bridge decks own their complete footprint. Edges use a hard gravel/concrete-like
+    // surface band and barriers reuse only measured cardinal road-edge pieces.
+    { "id": "road.bridge.deck.asphalt", "semantic": "road.bridge.deck", "when": { "material": ["asphalt", "paved", "concrete", ""] }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_86", "weight": 1 }] },
+    { "id": "road.bridge.deck.loose", "semantic": "road.bridge.deck", "when": { "material": ["gravel", "fine_gravel", "compacted", "unpaved", "ground", "dirt", "earth"] }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_54", "weight": 1 }] },
+    { "id": "road.bridge.edge.concrete", "semantic": "road.bridge.edge", "when": { "material": "concrete" }, "layer": "Floor", "role": "road-surface", "variants": [{ "tile": "blends_street_01_54", "weight": 1 }] },
+    { "id": "road.bridge.barrier.east", "semantic": "road.bridge.barrier", "when": { "orientation": "east" }, "layer": "FloorFurniture", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_9", "family": "street_curbs_01", "orientation": "east", "weight": 1 }] },
+    { "id": "road.bridge.barrier.west", "semantic": "road.bridge.barrier", "when": { "orientation": "west" }, "layer": "FloorFurniture", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_11", "family": "street_curbs_01", "orientation": "west", "weight": 1 }] },
+    { "id": "road.bridge.barrier.north", "semantic": "road.bridge.barrier", "when": { "orientation": "north" }, "layer": "FloorFurniture", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_10", "family": "street_curbs_01", "orientation": "north", "weight": 1 }] },
+    { "id": "road.bridge.barrier.south", "semantic": "road.bridge.barrier", "when": { "orientation": "south" }, "layer": "FloorFurniture", "role": "road-edge", "contextRequired": true, "variants": [{ "tile": "street_curbs_01_8", "family": "street_curbs_01", "orientation": "south", "weight": 1 }] },
+    { "id": "road.crossing.unsupported", "semantic": "road.crossing", "when": { "crossing": "*" }, "variants": [], "exclusions": ["Crossing artwork requires lane width, direction, and curb-ramp topology."] },
+    // Roadside objects are emitted only by the lane-safe topology pass. Stop
+    // signs have four declared facings; other controls use observed road-edge
+    // road-sign sprites where the sheet has no machine-readable face label.
+    { "id": "object.sign.stop.north", "semantic": "object.sign", "when": { "kind": "stop", "facing": "north" }, "layer": "Furniture", "role": "decoration", "contextRequired": true, "variants": [{ "tile": "street_decoration_01_2", "orientation": "north", "weight": 1 }] },
+    { "id": "object.sign.stop.east", "semantic": "object.sign", "when": { "kind": "stop", "facing": "east" }, "layer": "Furniture", "role": "decoration", "contextRequired": true, "variants": [{ "tile": "street_decoration_01_1", "orientation": "east", "weight": 1 }] },
+    { "id": "object.sign.stop.south", "semantic": "object.sign", "when": { "kind": "stop", "facing": "south" }, "layer": "Furniture", "role": "decoration", "contextRequired": true, "variants": [{ "tile": "street_decoration_01_0", "orientation": "south", "weight": 1 }] },
+    { "id": "object.sign.stop.west", "semantic": "object.sign", "when": { "kind": "stop", "facing": "west" }, "layer": "Furniture", "role": "decoration", "contextRequired": true, "variants": [{ "tile": "street_decoration_01_3", "orientation": "west", "weight": 1 }] },
+    { "id": "object.sign.street-name", "semantic": "object.sign", "when": { "kind": "street_name" }, "layer": "Furniture", "role": "decoration", "contextRequired": true, "variants": [{ "tile": "street_decoration_01_22", "weight": 1 }] },
+    { "id": "object.sign.crossing", "semantic": "object.sign", "when": { "kind": "crossing" }, "layer": "Furniture", "role": "signage", "contextRequired": true, "variants": [{ "tile": "street_roadsigns_01_8", "weight": 1 }] },
+    { "id": "object.sign.give-way", "semantic": "object.sign", "when": { "kind": "give_way" }, "layer": "Furniture", "role": "signage", "contextRequired": true, "variants": [{ "tile": "street_roadsigns_01_9", "weight": 1 }] },
+    { "id": "object.sign.signals", "semantic": "object.sign", "when": { "kind": "traffic_signals" }, "layer": "Furniture", "role": "signage", "contextRequired": true, "variants": [{ "tile": "street_roadsigns_01_16", "weight": 3 }, { "tile": "street_roadsigns_01_17", "weight": 2 }] },
+    { "id": "object.sign.route", "semantic": "object.sign", "when": { "kind": "route" }, "layer": "Furniture", "role": "signage", "contextRequired": true, "variants": [{ "tile": "street_roadsigns_01_4", "weight": 1 }] },
+    { "id": "object.sign.regulatory", "semantic": "object.sign", "when": { "kind": "regulatory" }, "layer": "Furniture", "role": "signage", "contextRequired": true, "variants": [{ "tile": "street_roadsigns_01_9", "weight": 1 }] },
+    { "id": "object.sign.unsupported", "semantic": "object.sign", "when": {}, "variants": [], "exclusions": ["Unknown sign semantics are retained but never substituted with unrelated artwork."] },
+    { "id": "object.furniture.street-lamp", "semantic": "object.furniture", "when": { "kind": "street_lamp" }, "layer": "Furniture", "role": "decoration", "contextRequired": true, "variants": [{ "tile": "lighting_outdoor_01_0", "weight": 244 }, { "tile": "lighting_outdoor_01_1", "weight": 316 }, { "tile": "lighting_outdoor_01_2", "weight": 133 }, { "tile": "lighting_outdoor_01_3", "weight": 258 }] },
+    { "id": "object.furniture.unsupported", "semantic": "object.furniture", "when": {}, "variants": [], "exclusions": ["Only explicitly supported roadside furniture is emitted loose."] },
+    { "id": "object.barrier.unsupported", "semantic": "object.barrier", "when": {}, "variants": [], "exclusions": ["Linear barriers require orientation and end/corner topology."] },
+    // Complete structures are registry selections too. `prefabClass` names the
+    // extracted-library bucket; variants stay empty because a prefab is a multi-tile,
+    // multi-level schematic rather than one loose sprite.
+    { "id": "building.prefab.house", "semantic": "building.prefab", "when": { "osmClass": "house" }, "prefabClass": "house", "variants": [], "exclusions": ["Selected from the extracted house prefab library."] },
+    { "id": "building.prefab.apartment", "semantic": "building.prefab", "when": { "osmClass": "apartment" }, "prefabClass": "apartment", "variants": [], "exclusions": ["Selected from the extracted apartment prefab library."] },
+    { "id": "building.prefab.grocery", "semantic": "building.prefab", "when": { "osmClass": "grocery" }, "prefabClass": "grocery", "variants": [], "exclusions": ["Selected from the extracted grocery prefab library."] },
+    { "id": "building.prefab.retail", "semantic": "building.prefab", "when": { "osmClass": "retail" }, "prefabClass": "retail", "variants": [], "exclusions": ["Selected from the extracted retail prefab library."] },
+    { "id": "building.prefab.restaurant", "semantic": "building.prefab", "when": { "osmClass": "restaurant" }, "prefabClass": "restaurant", "variants": [], "exclusions": ["Selected from the extracted restaurant prefab library."] },
+    { "id": "building.prefab.bar", "semantic": "building.prefab", "when": { "osmClass": "bar" }, "prefabClass": "bar", "variants": [], "exclusions": ["Selected from the extracted bar prefab library."] },
+    { "id": "building.prefab.office", "semantic": "building.prefab", "when": { "osmClass": "office" }, "prefabClass": "office", "variants": [], "exclusions": ["Selected from the extracted office prefab library."] },
+    { "id": "building.prefab.medical", "semantic": "building.prefab", "when": { "osmClass": "medical" }, "prefabClass": "medical", "variants": [], "exclusions": ["Selected from the extracted medical prefab library."] },
+    { "id": "building.prefab.police", "semantic": "building.prefab", "when": { "osmClass": "police" }, "prefabClass": "police", "variants": [], "exclusions": ["Selected from the extracted police prefab library."] },
+    { "id": "building.prefab.fire", "semantic": "building.prefab", "when": { "osmClass": "fire" }, "prefabClass": "fire", "variants": [], "exclusions": ["Selected from the extracted fire-station prefab library."] },
+    { "id": "building.prefab.education", "semantic": "building.prefab", "when": { "osmClass": "education" }, "prefabClass": "education", "variants": [], "exclusions": ["Selected from the extracted education prefab library."] },
+    { "id": "building.prefab.church", "semantic": "building.prefab", "when": { "osmClass": "church" }, "prefabClass": "church", "variants": [], "exclusions": ["Selected from the extracted church prefab library."] },
+    { "id": "building.prefab.industrial", "semantic": "building.prefab", "when": { "osmClass": "industrial" }, "prefabClass": "industrial", "variants": [], "exclusions": ["Selected from the extracted industrial prefab library."] },
+    { "id": "building.prefab.warehouse", "semantic": "building.prefab", "when": { "osmClass": "warehouse" }, "prefabClass": "warehouse", "variants": [], "exclusions": ["Selected from the extracted warehouse prefab library."] },
+    { "id": "building.prefab.garage", "semantic": "building.prefab", "when": { "osmClass": "garage" }, "prefabClass": "garage", "variants": [], "exclusions": ["Selected from the extracted garage prefab library."] },
+    { "id": "building.prefab.farm", "semantic": "building.prefab", "when": { "osmClass": "farm" }, "prefabClass": "farm", "variants": [], "exclusions": ["Selected from the extracted farm prefab library."] },
+    { "id": "building.prefab.gas-station", "semantic": "building.prefab", "when": { "osmClass": "gas_station" }, "prefabClass": "gas_station", "variants": [], "exclusions": ["Selected from the extracted gas-station prefab library."] },
+    { "id": "building.prefab.civic", "semantic": "building.prefab", "when": { "osmClass": "civic" }, "prefabClass": "civic", "variants": [], "exclusions": ["Selected from the extracted civic prefab library."] },
+    { "id": "building.prefab.shed", "semantic": "building.prefab", "when": { "osmClass": "shed" }, "prefabClass": "shed", "variants": [], "exclusions": ["Selected from the extracted shed prefab library."] },
+    { "id": "building.prefab.unknown", "semantic": "building.prefab", "when": {}, "prefabClass": "unknown", "variants": [], "exclusions": ["Unknown footprints use the extracted generic bucket before the declared placement fallback chain."] },
+    { "id": "poi.prefab", "semantic": "poi", "when": {}, "variants": [], "exclusions": ["POIs enrich containing building footprints and select complete prefabs rather than loose tiles."] },
+
+    // ---- Procedural context ---------------------------------------------
+    { "id": "procedural.vegetation.temperate", "semantic": "procedural.vegetation", "when": { "biome": ["town", "wild"] }, "layer": "Furniture", "role": "vegetation", "chance": 1, "variants": [
+      { "tile": "vegetation_trees_01_8", "weight": 143335 },
+      { "tile": "vegetation_trees_01_9", "weight": 142768 },
+      { "tile": "vegetation_trees_01_10", "weight": 140707 },
+      { "tile": "vegetation_trees_01_11", "weight": 140489 },
+      { "tile": "jumbo_tree_01_0", "weight": 126123 },
+      { "tile": "vegetation_groundcover_01_19", "weight": 7562 },
+      { "tile": "vegetation_groundcover_01_23", "weight": 7404 },
+      { "tile": "vegetation_groundcover_01_18", "weight": 7360 },
+      { "tile": "vegetation_groundcover_01_21", "weight": 7282 },
+      { "tile": "vegetation_groundcover_01_22", "weight": 6855 },
+      { "tile": "vegetation_foliage_01_10", "weight": 6825 },
+      { "tile": "vegetation_foliage_01_9", "weight": 6761 },
+      { "tile": "vegetation_foliage_01_14", "weight": 6733 },
+      { "tile": "vegetation_foliage_01_13", "weight": 6698 },
+      { "tile": "vegetation_foliage_01_12", "weight": 6682 },
+      { "tile": "vegetation_foliage_01_8", "weight": 6628 },
+      { "tile": "vegetation_foliage_01_11", "weight": 6567 },
+      { "tile": "vegetation_farm_01_38", "weight": 5514 },
+      { "tile": "vegetation_farm_01_36", "weight": 5375 },
+      { "tile": "vegetation_farm_01_33", "weight": 5284 },
+      { "tile": "vegetation_farm_01_44", "weight": 5071 },
+      { "tile": "vegetation_farm_01_43", "weight": 5058 },
+      { "tile": "vegetation_farm_01_42", "weight": 5024 },
+      { "tile": "vegetation_farm_01_32", "weight": 4964 }
+    ] },
+    { "id": "procedural.rock.outcrop", "semantic": "procedural.rock", "when": { "topology": "ridge" }, "layer": "Furniture", "role": "decoration", "contextRequired": true, "variants": [
+      { "tile": "boulders_54", "weight": 1 }, { "tile": "boulders_48", "weight": 1 },
+      { "tile": "boulders_52", "weight": 1 }, { "tile": "boulders_9", "weight": 1 }
+    ], "exclusions": ["boulders_40..47 are floor plates, not loose objects, and cannot be stacked over authored ground."] },
+    { "id": "procedural.road-wear.grime", "semantic": "procedural.road-wear", "when": { "surface": ["road", "gravel"], "effect": "grime" }, "layer": "FloorOverlay", "role": "surface-overlay", "variants": [
+      { "tile": "overlay_grime_floor_01_28", "weight": 1370 },
+      { "tile": "overlay_grime_floor_01_29", "weight": 1244 },
+      { "tile": "overlay_grime_floor_01_1", "weight": 558 },
+      { "tile": "overlay_grime_floor_01_0", "weight": 437 },
+      { "tile": "overlay_grime_floor_01_30", "weight": 48 },
+      { "tile": "overlay_grime_floor_01_17", "weight": 34 },
+      { "tile": "overlay_grime_floor_01_19", "weight": 26 },
+      { "tile": "overlay_grime_floor_01_18", "weight": 22 }
+    ] },
+    { "id": "procedural.road-wear.cracks", "semantic": "procedural.road-wear", "when": { "surface": "road", "effect": "crack" }, "layer": "FloorOverlay", "role": "surface-overlay", "variants": [
+      { "tile": "d_streetcracks_1_0", "weight": 6 }, { "tile": "d_streetcracks_1_1", "weight": 5 },
+      { "tile": "d_streetcracks_1_16", "weight": 4 }, { "tile": "d_streetcracks_1_17", "weight": 4 },
+      { "tile": "d_streetcracks_1_32", "weight": 2 }, { "tile": "d_streetcracks_1_33", "weight": 2 }
+    ] },
+    { "id": "procedural.road-wear.patches", "semantic": "procedural.road-wear", "when": { "surface": "road", "effect": "patch" }, "layer": "FloorOverlay", "role": "surface-overlay", "variants": [
+      { "tile": "d_streetcracks_1_24", "weight": 3 }, { "tile": "d_streetcracks_1_25", "weight": 3 },
+      { "tile": "d_streetcracks_1_26", "weight": 2 }, { "tile": "d_streetcracks_1_27", "weight": 2 }
+    ] },
+    { "id": "procedural.road-wear.faded-edges", "semantic": "procedural.road-wear", "when": { "surface": "road", "effect": "faded-edge" }, "layer": "FloorOverlay", "role": "surface-overlay", "variants": [
+      { "tile": "d_streetcracks_1_48", "weight": 3 }, { "tile": "d_streetcracks_1_49", "weight": 3 },
+      { "tile": "d_streetcracks_1_50", "weight": 2 }, { "tile": "d_streetcracks_1_51", "weight": 2 }
+    ] },
+    { "id": "procedural.road-wear.damaged", "semantic": "procedural.road-wear", "when": { "surface": ["road", "gravel"], "effect": "damaged" }, "layer": "FloorOverlay", "role": "surface-overlay", "variants": [
+      { "tile": "d_streetcracks_1_64", "weight": 3 }, { "tile": "d_streetcracks_1_65", "weight": 3 },
+      { "tile": "d_streetcracks_1_66", "weight": 2 }, { "tile": "d_streetcracks_1_67", "weight": 2 }
+    ] }
+  ]
+}

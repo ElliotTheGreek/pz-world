@@ -5,6 +5,66 @@ ones that are guesses say so.
 
 ---
 
+## Validation status for the upgraded asset pipeline
+
+The automated evidence is current and reproducible with
+`npm run benchmark-asset-pipeline`: five pinned real-world builds, zero curb/carriageway,
+sidewalk/carriageway, or bridge-edge ownership conflicts, and zero gaps at Build 42's
+256-square cell seams. The semantic registry validates 120 mappings and 119 referenced
+assets with no errors or warnings. `npm run verify -- <mod>` parses all 6,400 cells of a
+built world and `node tools/audit-cells.js` finds no structural problems in it.
+
+Those numbers do **not** certify native runtime behavior. The upgraded pipeline still
+requires a dated Build 42 run that traverses at least 20 chunk and two cell boundaries,
+visually checks the documented urban/rural/highway/bridge route, and retains the
+`PZWORLD_VALIDATION` console summary. Until that is performed, collision response,
+blank/incorrect artwork, frame pacing, native stability, and live streaming are pending.
+This is intentionally reported as an open manual gate rather than converted into an
+unverifiable automated claim.
+
+---
+
+## 0. The road artwork existed and was not connected to the world
+
+This is the largest defect the project has had, and it hid behind a green test suite for
+as long as it existed.
+
+`src/plan/roads.js` and `src/plan/roadside.js` are about 1,800 lines that know how to
+draw a road: kerbs with corners and ends, pavement with grass feathering onto its outer
+edge, lane lines, junction conflict areas, limited-access cross-sections, rural verges
+and ditches, bridge decks and barriers, stop signs, street lamps. They were written
+against `buildPlan`, which only the **legacy** worldgen emitter consumes. The route that
+actually writes the cells a player loads — `emit/generate.js` — rasterised its own roads
+as one flat band of tarmac with one square of pavement beside it, and called none of it.
+
+Measured on a shipped 2,500 m Plattsburgh build with `npm run audit-tile-usage`:
+
+```
+                          before        after
+street_curbs_01           15,105      182,610    (before: all inside building prefabs)
+street_trafficlines_01         0       44,110
+street_curbs_01_diag*          0        5,000     the diagonal sheets, first use ever
+blends_natural_01_16           0    3,759,743     grass variant 3 of 4
+blends_natural_01_23           0    3,761,375     grass variant 4 of 4
+```
+
+Every one of `test/curbs.test.js`, `test/intersections.test.js`,
+`test/sidewalk-transitions.test.js`, `test/highway-rendering.test.js`,
+`test/rural-road-rendering.test.js` and `test/roadside.test.js` passed throughout. They
+assert against the `TileCanvas`, and nothing read the canvas.
+
+`src/plan/roadworks.js` connects the two, and `test/authored-artwork.test.js` reads the
+emitted `.lotpack` files back off disk so the same thing cannot happen quietly again.
+
+**What this cost.** A 2,500 m build went from 2 m 31 s to 5 m 39 s and from 451 MB to
+472 MB, because the world now carries about five times as many blend overlays
+(0.184 per square against vanilla's measured 0.121) and 375,000 kerb, marking and sign
+tiles that were not there before.
+
+---
+
+---
+
 ## 1. It has been played, and that is where the real bugs were
 
 This entry used to say no generated map had ever been loaded. It has been now,
@@ -82,17 +142,48 @@ is the only lever, and it was set to the one that does nothing.
 **The city had almost no zombies.** The lotheader's per-chunk `zombieIntensity`
 array — 1,024 bytes, read only by native code through
 `ZombiePopulationManager.n_loadChunk` — was **all zeros**, which means "no
-zombies belong here" for every chunk in the world. Measured across Muldraugh:
+zombies belong here" for every chunk in the world.
+
+The first fix stamped a value on chunks containing a room and left the rest at
+zero, which is the reading you get from counting Muldraugh one way:
 
 ```
-chunks containing a room      45,147   mean 1.20   (1 and 2 dominate)
-chunks containing no room    738,213   mean 0.32   (84% are zero)
-
-and within the built-up ones it tracks how much is roofed:
-  0-25%  0.99    25-50%  1.08    50-75%  1.17    75-100%  1.45
+chunks containing a room      45,147   mean 1.20
+chunks containing no room  4,117,413   mean 0.06
 ```
 
-So a chunk with rooms over it now gets 1, or 2 once buildings cover half of it.
+That reading is wrong, and it took a second report of "there seem to be fewer
+zombies" to find out why. Count the other way — over the 148,819 chunks that
+carry *any* intensity — and **only about a fifth of them contain a room**. The
+rest are streets, yards, car parks and the edge of the woods. Intensity is not a
+building stamp; it is a field that decays outward from built-up land:
+
+```
+chunks with no room, by distance in chunks to the nearest roofed chunk
+  1 chunk away      65,851   47.94% non-zero   mean 0.953
+  2                 54,988   35.29%            mean 0.704
+  3-4               96,054   22.15%            mean 0.442
+  5-8              190,575   11.60%            mean 0.232
+  9-12             190,161    6.33%            mean 0.124
+  further        4,389,160    0.38%            mean 0.008
+
+and inside built-up land it rises with how much of the chunk is roofed:
+  0-25%  51.7% non-zero   25-50%  53.8%   50-75%  59.1%   75-100%  64.5%
+```
+
+Divide mean by non-zero rate in either table and every band lands on **2.0**. So
+vanilla's field is one probability that decays with distance from buildings, and
+a single fixed value distribution wherever it fires (1: 31.8%, 2: 48.9%, 3:
+12.1%, 4: 5.0%, 5-10: 2.2%). Nothing in the whole map exceeds 10.
+
+`src/emit/population.js` reproduces exactly that, and `CellGrid.applyPopulation`
+lays it over the finished cells rather than stamping it per building — the decay
+runs for twelve chunks and has to cross cell boundaries to work at all. The old
+values of 8 and 16 are gone: they were outside anything vanilla writes, so they
+were being handed to native code that has never seen them, and they could not
+have helped anyway because the streets the player actually walks down were not in
+the field at all. `INTENSITY_SCALE` is the dial, and it scales the probability
+rather than the value so the byte stays in range.
 
 ---
 
@@ -112,22 +203,24 @@ The room names *are* preserved through extraction and rotation
 
 ---
 
-## 4. Diagonal kerbs are not used at all
+## 4. Diagonal kerbs are used, and the cadence is inferred rather than measured
 
-The mod laid `street_curbs_01_diag_0` on every diagonal kerb square whatever
-direction the road ran, which is the right artwork in at most one of the four
-diagonal directions.
+They used to be laid as one repeated sprite whatever direction the road ran, which is the
+right artwork in at most one of the four diagonal directions — and then they were not laid
+at all, because the pass that chose them never reached the world (limitation 0). A 2,500 m
+Plattsburgh build now places about 5,000 of them across both sheets.
 
-Measuring the sheets against Muldraugh says why one tile cannot stand in for
-them: the diagonal curbs appear in runs of six consecutive indices (0–5 and
-40–45 in each of the two sheets) with road on three or four sides. They are a
-*sequence* laid along a 1:1 run inside the carriageway, not a single edge tile,
-so using them properly means tracking position along the run and its parity.
+What remains a judgement rather than a measurement is the **order**. The diagonal curbs
+appear in runs of six consecutive indices (0–5 and 40–45 in each of the two sheets) with
+road on three or four sides, so they are a sequence laid along a 1:1 run rather than a
+single edge tile. `selectCurbSequenceVariant` walks that run at `along / √2` and uses a
+mirrored six-piece cadence — `0 1 3 2 4 5` forward, `0 2 3 1 5 4` on the opposite edge —
+which is derived from vanilla adjacency evidence for the first four slots and extended to
+six by symmetry. If a diagonal kerb reads as stepped rather than continuous in game, this
+cadence is where to look.
 
-Until that exists, every kerb is one of the four measured axis-aligned tiles
-([DEV_GUIDE §2.11](../DEV_GUIDE.md)), which is right-facing artwork in the wrong
-shape rather than wrong-facing artwork. A diagonal street reads as a staircase.
-Vanilla has no artwork for a road at 20° either.
+Vanilla has no artwork for a road at 20° either, so a street on an arbitrary bearing is
+still a staircase with axis-aligned kerbs on it. That is a property of the target.
 
 ---
 
@@ -279,24 +372,42 @@ rather than drop it, which needs a placement pass that can back-track.
 
 ---
 
-## 13. The in-game map is a second rendering
+## 13. The in-game map is a second rendering, and it is found by name
 
-`M` and the minimap read `worldmap.xml.bin`, and `npm run world` writes it
-directly. The game's own XML reader is broken (DEV_GUIDE §2.11) — it passes a
-short-count where the binary reader passes a point-count and throws
-`IndexOutOfBounds` on every feature — so the `.xml` is not shipped at all and a
-stale one is deleted rather than left to be found.
+`M` and the minimap read `worldmap.xml.bin`, and `npm run world` writes it directly.
 
-It is a second rendering of the same source data, so it can disagree with the
-world: road widths on the map are per class rather than per way, polylines are
-simplified to a 2-square tolerance, and only the tags `ISMapDefinitions.lua`
-filters on draw anything — town ground, farmland and grass have no map layer and
-are left blank.
+**The name has to exist before the game starts.** Both screens look the file up as
+`fileExists('media/maps/PZWorld/worldmap.xml')`, and `fileExists` is
+`new File(ZomboidFileSystem.getString(path)).exists()` — `getString` answers from
+`activeFileMap`, a table built once while the mods are scanned, and returns its argument
+unchanged when the key is missing, at which point the path is relative to the install
+directory and of course does not exist. A file created minutes later is invisible by name
+for the rest of the session, which is why a freshly built city had a blank map and a blank
+minimap and then drew correctly on the *next* launch.
 
-Street names come from a separate `streets.xml`, which is generated — 429
-records for 277 named streets in Plattsburgh. They fade in at zoom ≥ 13.5 and
-never appear on the minimap, which is vanilla behaviour: `ISMiniMap` does not
-call `initDefaultStreetData` for any map, including Knox County.
+So the canvas ships the name: a stub `worldmap.xml` that exists to be found and never to
+be read, and an empty `worldmap.xml.bin` beside it. `WorldMapDataAssetManager.startLoading`
+prefers a `.bin` sibling whenever one is present, and the game's own XML reader is broken
+(DEV_GUIDE §2.11) — it passes `WorldMapPoints.setPoints` a count of shorts where the binary
+reader passes a count of points and throws `IndexOutOfBounds` on every feature — so the
+stub must never be parsed. `npm run world` overwrites the `.bin` and leaves the stub alone,
+and `tools/build-mod.js` copies any map companion the installed world does not already have
+without touching one it does.
+
+**A world built from inside the game is one launch behind.** If the stub was already
+present when the session started, vanilla loaded the `.bin` as it was then, and rebuilding
+mid-session does not reload it. `PZWorld_Map.lua` covers only the first-ever build, where
+the name was genuinely absent at startup and an absolute path sidesteps `activeFileMap`.
+
+It is a second rendering of the same source data, so it can disagree with the world: road
+widths on the map are per class rather than per way, polylines are simplified to a 2-square
+tolerance, and only the tags `ISMapDefinitions.lua` filters on draw anything — town ground,
+farmland and grass have no map layer and are left blank.
+
+Street names come from a separate `streets.xml`, generated the same way and found by the
+same mechanism — 430 records for 277 named streets in Plattsburgh. They fade in at
+zoom ≥ 13.5 and never appear on the minimap, which is vanilla behaviour: `ISMiniMap` does
+not call `initDefaultStreetData` for any map, including Knox County.
 
 ---
 
@@ -359,3 +470,35 @@ variety: a street of similar plots draws from a shortlist of similar buildings
 rather than four times as many. Lifting it needs a measured rotation table for
 the roof and fixture sheets, derived from the shipped maps the same way the kerb
 facings and the blend layout were. `MAX_TURNS` in `src/plan/place.js`.
+
+---
+
+## 16. Two line sprites are identified by context, not by looking at them
+
+There is no way to see a sprite from here, so which of `street_trafficlines_01`'s 64 tiles
+is a centre line, a lane divider or a stop bar is inferred from where vanilla places them.
+Three choices rest on that inference and each is one line of
+`config/semantic-mappings.jsonc` to change:
+
+| mapping | tiles | evidence |
+|---|---|---|
+| `road.marking.centre` | `_4` / `_6` | 50,253 and 40,572 placements, both dominated by the middle of a straight |
+| `road.highway.marking` | `_20` / `_22` | the busiest pair in the shipped maps, 44,134 and 58,065, almost entirely on-road |
+| `road.marking.junction` | `_34` / `_32` | the only pair whose context is dominated by junctions — 903 cross and 705 corner placements out of 4,616 |
+
+The orientations are measured and now enforced: `npm run verify-semantic-registry` fails
+if a mapping declares a run direction the inventory contradicts at high confidence. What
+is *not* verifiable offline is whether a stop bar is a stop bar. If a junction mouth reads
+wrong in game, `road.marking.junction` is the mapping to remove.
+
+---
+
+## 17. Lane markings cover less road than vanilla
+
+Vanilla's town roads carry a `street_trafficlines_01` tile on 7.4% of their squares. A
+generated city reaches about 3.2%, because only the arterial and collector hierarchies are
+marked — the same list the rural renderer uses — and a US residential street genuinely has
+no centre line. The rest of vanilla's 7.4% is crossings, stop bars, parking bay lines and
+arrows, of which only the stop bar is currently drawn.
+
+`markedHierarchies` in `config/roads.jsonc` is the dial if that reads as too plain.

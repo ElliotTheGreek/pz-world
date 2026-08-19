@@ -30,6 +30,8 @@ import { SurfaceGrid, writeBiomeMaps } from '../src/emit/world.js';
 import { decodePng } from '../src/formats/png.js';
 import { Noise } from '../src/lib/noise.js';
 import { baseTile } from '../src/plan/blends.js';
+import { naturalSurfaceAt } from '../src/plan/surfaces.js';
+import { terrainFields } from '../src/plan/terrain-fields.js';
 import { decayAt } from '../src/plan/decay.js';
 import { readCell } from '../src/formats/cell.js';
 import { CELL_SIZE, CHUNK_SIZE } from '../src/formats/lotheader.js';
@@ -317,30 +319,56 @@ test('noise arranges vegetation into stands without changing how much there is',
   assert.ok(PLANTABLE.has('grass'));
 });
 
-test('ground variants come down in patches, not as a per-square dither', () => {
+test('ground variants are dithered per square and materials come down in patches', () => {
+  // Both halves of this are measured on 24 Muldraugh cells (1,386,631 natural
+  // squares at level 0). A variant run along a row averages 1.30 squares and a
+  // *material* run averages 11.02 with a median of 3 and a 90th percentile of
+  // 19. This test used to assert the opposite of the first half, and that
+  // assumption is why two of the four grass variants were never laid at all.
   const set = { sheet: 'blends_natural_01', base: 16, variants: [0, 5, 6, 7] };
-  const texture = new Noise('texture:test');
 
-  const runLength = (useNoise) => {
-    const runs = [];
-    let cur = null;
-    let len = 0;
-    for (let x = 0; x < 3000; x++) {
-      const t = baseTile(set, x, 500, useNoise ? texture : null);
-      if (t === cur) len++;
+  const runs = [];
+  let cur = null;
+  let len = 0;
+  const chosen = new Set();
+  for (let x = 0; x < 4000; x++) {
+    const t = baseTile(set, x, 500);
+    chosen.add(t);
+    if (t === cur) len++;
+    else {
+      if (cur !== null) runs.push(len);
+      cur = t;
+      len = 1;
+    }
+  }
+  const meanRun = runs.reduce((a, b) => a + b, 0) / runs.length;
+  assert.ok(meanRun < 1.8, `variant runs should be about 1.3 squares, got ${meanRun.toFixed(2)}`);
+  assert.equal(chosen.size, 4, `every variant should be reachable, saw ${chosen.size}`);
+
+  // And the same choice every time, so a rebuilt city is the same city.
+  assert.equal(baseTile(set, 17, 42), baseTile(set, 17, 42));
+
+  const fields = terrainFields('patch-scale');
+  const materialRuns = [];
+  for (let y = 0; y < 200; y++) {
+    let material = null;
+    let run = 0;
+    for (let x = 0; x < 400; x++) {
+      const here = naturalSurfaceAt(255, x, y, fields);
+      if (here === material) run++;
       else {
-        if (cur !== null) runs.push(len);
-        cur = t;
-        len = 1;
+        if (material !== null) materialRuns.push(run);
+        material = here;
+        run = 1;
       }
     }
-    return runs.reduce((a, b) => a + b, 0) / runs.length;
-  };
-
-  // Choosing from a per-square hash gives a run length of 1 — every square a different
-  // variant, which reads as a uniform dither over a whole city rather than as ground.
-  assert.ok(runLength(false) < 2, 'the hash fallback should be per-square');
-  assert.ok(runLength(true) > 20, `expected broad patches, got ${runLength(true).toFixed(1)} squares`);
+    materialRuns.push(run);
+  }
+  materialRuns.sort((a, b) => a - b);
+  const median = materialRuns[materialRuns.length >> 1];
+  const p90 = materialRuns[Math.floor(materialRuns.length * 0.9)];
+  assert.ok(median >= 2 && median <= 5, `material runs should have a median near 3, got ${median}`);
+  assert.ok(p90 >= 10 && p90 <= 28, `material runs should have a p90 near 19, got ${p90}`);
 });
 
 test('road wear is patchy and covers a visible share of the tarmac', () => {

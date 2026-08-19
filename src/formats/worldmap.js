@@ -439,3 +439,117 @@ export function parseWorldMapXml(text, { width, height } = {}) {
 export function compileWorldMapXml(text, geometry) {
   return encodeWorldMapBin(parseWorldMapXml(text, geometry));
 }
+
+/**
+ * The same document as XML, in exactly the dialect `parseWorldMapXml` reads and
+ * `PZWorld/WorldMap.lua` writes.
+ *
+ * ## Why the authored build writes this at all
+ *
+ * The helper watches `worldmap.xml` and recompiles `worldmap.xml.bin` from it
+ * whenever it changes (`helper/serve.js compileMapIfChanged`), because the
+ * in-game build can only write text — Lua's `getModFileWriter` hands back an
+ * `OutputStreamWriter`. That watcher does not know or care which half of the
+ * project produced the file.
+ *
+ * So there were two sources of truth for one file, and the XML always won. An
+ * authored build that wrote a real `.bin` and left a *stub* beside it got the
+ * stub compiled over the top, and the map went blank. Deleting the XML instead
+ * hid the problem and caused a different one: both map screens resolve the name
+ * through `ZomboidFileSystem.activeFileMap`, a table built while the mods are
+ * scanned, so a map directory with no `worldmap.xml` at startup is never asked
+ * for its data at all, however good the `.bin` next to it is.
+ *
+ * Writing the real map as XML removes the conflict rather than arbitrating it:
+ * the name is there for the scan, and whatever the helper compiles from it is
+ * the same map. `assertXmlMatchesBin` below is what proves that per build.
+ *
+ * ## Round-trip constraints, enforced not assumed
+ *
+ * `parseWorldMapXml` reads points with `x="(-?\d+)"` and properties with
+ * `name="([^"]*)" value="([^"]*)"`, and does **no** entity decoding. So a
+ * coordinate must be an integer and a property must contain no character that
+ * would need escaping — true of every property this generator emits, since they
+ * all come from the fixed enums in `src/emit/worldmap.js`. Anything else throws
+ * here rather than silently producing a file that reads back as something else.
+ */
+export function encodeWorldMapXml(doc) {
+  const out = ['<?xml version="1.0" encoding="UTF-8"?>\r\n<world version="1.0">\r\n'];
+  for (const cell of doc.cells) {
+    if (!Number.isInteger(cell.x) || !Number.isInteger(cell.y)) {
+      throw new Error(`cell position ${cell.x},${cell.y} is not a pair of integers`);
+    }
+    out.push(` <cell x="${cell.x}" y="${cell.y}">\r\n`);
+    for (const feature of cell.features) {
+      if (!GEOMETRY_TYPES.has(feature.type)) {
+        throw new Error(`unknown geometry type "${feature.type}"`);
+      }
+      out.push(`  <feature>\r\n   <geometry type="${feature.type}">\r\n`);
+      for (const ring of feature.rings) {
+        out.push('    <coordinates>\r\n');
+        for (let i = 0; i < ring.length; i += 2) {
+          const x = ring[i];
+          const y = ring[i + 1];
+          if (!Number.isInteger(x) || !Number.isInteger(y)) {
+            throw new Error(`point ${x},${y} in cell ${cell.x},${cell.y} is not a pair of integers`);
+          }
+          out.push(`     <point x="${x}" y="${y}"/>\r\n`);
+        }
+        out.push('    </coordinates>\r\n');
+      }
+      out.push('   </geometry>\r\n   <properties>\r\n');
+      for (const [name, value] of feature.properties) {
+        for (const text of [name, value]) {
+          if (/["&<>]/.test(String(text))) {
+            throw new Error(
+              `property "${name}"="${value}" contains a character the map XML reader does not decode`,
+            );
+          }
+        }
+        out.push(`    <property name="${name}" value="${value}"/>\r\n`);
+      }
+      out.push('   </properties>\r\n  </feature>\r\n');
+    }
+    out.push(' </cell>\r\n');
+  }
+  out.push('</world>\r\n');
+  return out.join('');
+}
+
+/**
+ * Parse the XML into exactly the document the helper builds from it.
+ *
+ * `helper/serve.js compileMapIfChanged` does not use the geometry the file
+ * describes: it overrides all four numbers with the canvas, because the mod's
+ * Lua writer emits no extent at all and `boundsOf` would otherwise size the grid
+ * to whichever cells happen to have features in them. Anything that wants to
+ * predict what the helper will write has to do the same four assignments, so
+ * they live here rather than being repeated and drifting.
+ */
+export function compileLikeHelper(xmlText, { width, height } = {}) {
+  const doc = parseWorldMapXml(xmlText, { width, height });
+  doc.width = width ?? doc.width;
+  doc.height = height ?? doc.height;
+  doc.originX = 0;
+  doc.originY = 0;
+  return doc;
+}
+
+/**
+ * Prove that the XML beside the `.bin` compiles to the `.bin`.
+ *
+ * This is the check that would have caught a blank map before it shipped, twice.
+ * It compiles the XML exactly the way the helper does — same forced geometry —
+ * and compares bytes, so "the helper might overwrite the map" stops being a
+ * thing that can go wrong rather than a thing to be careful about.
+ */
+export function assertXmlMatchesBin(xmlText, binBytes, geometry) {
+  const recompiled = encodeWorldMapBin(compileLikeHelper(xmlText, geometry));
+  if (!recompiled.equals(Buffer.from(binBytes))) {
+    throw new Error(
+      `worldmap.xml does not compile to the bytes in worldmap.xml.bin `
+        + `(${recompiled.length} vs ${binBytes.length} bytes) — the helper would replace the map`,
+    );
+  }
+  return true;
+}

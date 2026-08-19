@@ -177,36 +177,39 @@ function pick(list, x, y, salt) {
 }
 
 /**
- * How many squares across a patch of one ground variant runs.
- *
- * A base surface has four interchangeable variants, and choosing between them with a
- * per-square hash is white noise: statistically even, and visually a uniform dither that
- * makes 30 million squares of grass read as one flat texture with a repeating pattern in
- * it. Low-frequency noise instead puts each variant down in broad patches, which is what
- * ground actually looks like from above and what stops the tiling being legible.
- *
- * Large on purpose — a patch is most of a city block.
- */
-export const TEXTURE_SCALE = 110;
-
-/**
  * The solid tile for a surface on this square, chosen from its base variants.
+ *
+ * ## This is a per-square dither, and that is measured rather than assumed
+ *
+ * It used to choose from a low-frequency field on the reasoning that a
+ * per-square hash would read as a uniform dither over a whole city. The
+ * reasoning was sound and the premise was wrong, and the cost was the flattest
+ * thing about a generated world.
+ *
+ * Sampling every base tile at level 0 across 24 Muldraugh cells — 1,386,631
+ * squares — settles it. Vanilla picks the four variants of a block **uniformly
+ * per square**:
+ *
+ *     block 1 Grass_Dark    919,146   offsets 0/5/6/7 at 25.2 25.0 24.8 25.1 %
+ *     block 2 Grass_Medium  287,110                      25.0 24.9 24.9 25.2 %
+ *     block 3 Grass_Light    96,640                      25.1 25.1 24.8 25.0 %
+ *
+ *     run of one variant along a row:  mean 1.30 squares, median 1, p90 2
+ *     run of one *material* along a row: mean 11.02, median 3, p90 19
+ *
+ * So the fine mottle a player sees is the four variants shuffled square by
+ * square, and the patches are the *material* changing every ten squares or so.
+ * Choosing variants from a 110-square field reached only two of the four and
+ * changed them once a screen, which is precisely the reported symptom: flat
+ * grass everywhere. The patch structure belongs to `naturalSurfaceAt` in
+ * `src/plan/surfaces.js`, and that is where it now lives.
  *
  * @param {BlendSet} set
  * @param {number} x
  * @param {number} y
- * @param {import('../lib/noise.js').Noise} [texture] low-frequency field; without it the
- *   choice falls back to the old per-square hash
  */
-export function baseTile(set, x, y, texture = null) {
-  if (!texture || set.variants.length <= 1) {
-    return `${set.sheet}_${set.base + pick(set.variants, x, y, 'base')}`;
-  }
-  const n = texture.fbm(x, y, TEXTURE_SCALE, 2);
-  let i = Math.floor(n * set.variants.length);
-  if (i < 0) i = 0;
-  if (i >= set.variants.length) i = set.variants.length - 1;
-  return `${set.sheet}_${set.base + set.variants[i]}`;
+export function baseTile(set, x, y) {
+  return `${set.sheet}_${set.base + pick(set.variants, x, y, 'base')}`;
 }
 
 /**

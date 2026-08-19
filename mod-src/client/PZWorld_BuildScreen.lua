@@ -7,23 +7,23 @@
     taken. Earlier versions did the work with no visible indication at all,
     which is indistinguishable from being broken.
 
-    It also does the work. Stepping the build from this screen's `update` is
-    what makes a progress bar possible at all — a blocking loop renders no
-    frames, so any bar drawn around one is a lie.
+    It does **not** do the work. There is one engine, `tools/build-world.js`,
+    run as a child process by the helper when it sees a build order; this screen
+    reads the progress file that build writes and draws it. Nothing else.
 
-    Doing it here, at the menu, also puts `worldgen.static_modules` in place
-    before a single chunk is generated. Building later means the chunks around
-    the player are already made and never revisited.
+    It used to step a second, Lua implementation of the whole generator from its
+    own `update`, while the server state ran a third copy and the helper ran the
+    real one — three world generators from one click, writing over each other's
+    output. All of that is deleted. If this screen ever grows a `Build.step()`
+    again, that is the bug.
 ]]
 
 require "ISUI/ISPanelJoypad"
 require "PZWorld/Config"
 require "PZWorld/Bridge"
-require "PZWorld/Build"
 
 local Config = PZWorld.Config
 local Bridge = PZWorld.Bridge
-local Build = PZWorld.Build
 
 PZWorldBuildScreen = ISPanelJoypad:derive("PZWorldBuildScreen")
 
@@ -31,16 +31,17 @@ local FONT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 local FONT_MED = getTextManager():getFontHeight(UIFont.Medium)
 local FONT_LARGE = getTextManager():getFontHeight(UIFont.Large)
 
---- The stages the player is shown, in order. Mirrors PZWorld.Build.
+--- The stages the player is shown, in order.
+--- These are the `stage` values `tools/build-world.js` reports, and nothing
+--- else — if a stage here never lights up, that name is wrong, not the build.
 local STAGE_LABELS = {
-    { id = "waiting",   text = "Downloading map data from OpenStreetMap" },
-    { id = "loading",   text = "Reading map data" },
-    { id = "orienting", text = "Working out which way the city faces" },
-    { id = "buildings", text = "Placing buildings" },
-    { id = "roads",     text = "Laying roads" },
-    { id = "ground",    text = "Painting ground and vegetation" },
-    { id = "mapping",   text = "Drawing the in-game map" },
-    { id = "emitting",  text = "Handing the world to the game" },
+    { id = "fetching", text = "Downloading map data from OpenStreetMap" },
+    { id = "reading",  text = "Reading buildings from your install" },
+    { id = "placing",  text = "Choosing a real building for every footprint" },
+    { id = "surfaces", text = "Laying roads, kerbs and pavements" },
+    { id = "stamping", text = "Painting ground and planting vegetation" },
+    { id = "cells",    text = "Writing the map cells" },
+    { id = "extras",   text = "Drawing the in-game map" },
 }
 
 function PZWorldBuildScreen:new(params)
@@ -77,27 +78,25 @@ function PZWorldBuildScreen:createChildren()
     self:addChild(self.retryButton)
 end
 
---- Throw away all state and run the whole thing again from the request.
+--- Order the build again from the top.
 function PZWorldBuildScreen:onRetry()
-    PZWorld.Build.cancel()
-    self.started = false
     self.finished = false
     self.failed = nil
     self.summary = nil
     self.startedAt = getTimestampMs and getTimestampMs() or 0
     self.elapsed = 0
+    self.stage = nil
     self.actionButton:setTitle("Cancel")
-    pcall(function() PZWorld.Bridge.clearData() end)
+    Bridge.writeProgress({ progress = 0, message = "Starting", done = false })
+    pcall(function() Bridge.writeBuildOrder(self.params) end)
     print("PZWORLD: restarting build")
 end
 
 function PZWorldBuildScreen:onAction()
-    if self.finished or self.failed then
-        self:close()
-    else
-        Build.cancel()
-        self:close()
-    end
+    -- Closing does not stop the build. It is a separate process and it owns the
+    -- files it is writing; killing it half way through would leave a map
+    -- directory in a state nothing else knows how to finish.
+    self:close()
 end
 
 function PZWorldBuildScreen:close()
@@ -142,7 +141,8 @@ function PZWorldBuildScreen:prerender()
     y = y + FONT_SMALL + 22
 
     -- The bar
-    local progress, message = Build.progress()
+    local progress = self.progress or 0
+    local message = self.message or "Waiting for the helper"
     if self.failed then progress = 0 end
     local barW = math.min(760, self.width - 160)
     local barX = cx - barW / 2
@@ -162,8 +162,7 @@ function PZWorldBuildScreen:prerender()
     y = y + FONT_SMALL + 20
 
     -- Stage checklist, so it is obvious what has happened and what has not.
-    local s = Build.state
-    local current = s and s.stage or "waiting"
+    local current = self.stage or "fetching"
     local reached = false
     for _, stage in ipairs(STAGE_LABELS) do
         local isCurrent = (stage.id == current)
@@ -198,51 +197,58 @@ function PZWorldBuildScreen:prerender()
     end
 end
 
---- One slice of work per frame. This is why the bar can move at all.
+--[[
+    Watch the one build.
+
+    The build runs in `tools/build-world.js`, spawned by the helper, and reports
+    through the progress file. So this polls; it does no work of its own. A
+    build that dies without writing anything is the one case the file cannot
+    describe, which is what the timeout below is for — otherwise the screen
+    would sit at 0% for ever with nothing to say.
+]]
+local NO_NEWS_TIMEOUT_MS = 90000
+
 function PZWorldBuildScreen:update()
     ISPanelJoypad.update(self)
     if getTimestampMs then self.elapsed = getTimestampMs() - self.startedAt end
     if self.finished or self.failed then return end
 
-    if not self.started then
-        self.started = true
-        Build.start(self.params)
+    local p
+    pcall(function() p = Bridge.readProgress() end)
+    if not p then
+        if self.elapsed > NO_NEWS_TIMEOUT_MS then
+            self.failed = "No progress file. Is the helper running?"
+            self.actionButton:setTitle("Close")
+        end
         return
     end
 
-    Build.step()
+    self.progress = p.progress
+    self.message = p.message
+    -- Absent means "do not move the checklist", not "back to stage one".
+    if p.stage then self.stage = p.stage end
 
-    local s = Build.state
-    if not s then return end
-
-    -- Mirror progress out for anything else that wants it (and for the log).
-    pcall(function()
-        local p, m = Build.progress()
-        Bridge.writeProgress({ progress = p, message = m, done = s.finished, err = s.err })
-    end)
-
-    if s.finished then
-        if s.err then
-            self.failed = s.err
-            self.actionButton:setTitle("Close")
-            print("PZWORLD: build failed: " .. tostring(s.err))
-        else
-            self.finished = true
-            self.actionButton:setTitle("Continue")
-            local prefabs = 0
-            if worldgen and worldgen.prefabs then
-                for _ in pairs(worldgen.prefabs) do prefabs = prefabs + 1 end
-            end
-            local modules = (worldgen and worldgen.static_modules) and #worldgen.static_modules or 0
-            self.summary = string.format(
-                "%d buildings, %d prefabs, %d placements, median twist %.1f deg",
-                s.stats.placed, prefabs, modules, Build.medianResidual())
-            print("PZWORLD: " .. self.summary)
-            print(string.format("PZWORLD: worldgen is %s, bearing %.2f, alignment %d%% -> %d%%",
-                worldgen and "available" or "NIL", s.bearing or 0,
-                math.floor((s.alignBefore or 0) * 100), math.floor((s.alignAfter or 0) * 100)))
-        end
+    if p.progress > 0 or p.stage then self.sawProgress = true end
+    if not self.sawProgress and self.elapsed > NO_NEWS_TIMEOUT_MS then
+        self.failed = "The helper has not started the build. Is it running?"
+        self.actionButton:setTitle("Close")
+        return
     end
+
+    if not p.done then return end
+
+    if p.err and p.err ~= "" then
+        self.failed = p.err
+        self.actionButton:setTitle("Close")
+        print("PZWORLD: build failed: " .. tostring(p.err))
+        return
+    end
+
+    self.finished = true
+    self.progress = 1
+    self.actionButton:setTitle("Continue")
+    self.summary = p.message or "World built"
+    print("PZWORLD: build finished — " .. tostring(self.summary))
 end
 
 function PZWorldBuildScreen.open(params)

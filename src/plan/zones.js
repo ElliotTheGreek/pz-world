@@ -26,6 +26,7 @@
  */
 
 import { loadTagTable } from './buildings.js';
+import { loadSemanticRegistry, resolveSemantic } from '../catalogue/semantic-registry.js';
 import { SparseGrid } from './grid.js';
 
 /**
@@ -86,8 +87,51 @@ export function fillPolygon(grid, points, value, bounds = null) {
   return painted;
 }
 
+/** Convert retained OSM tags to the finite site vocabulary in the asset registry. */
+export function siteClassFor(tags = {}) {
+  if (tags.amenity === 'parking') {
+    const loose = ['gravel', 'fine_gravel', 'compacted', 'unpaved', 'ground', 'dirt', 'earth'];
+    return loose.includes(tags.surface) ? 'parking-gravel' : 'parking-paved';
+  }
+  if (tags.natural === 'water' || tags.waterway || tags.landuse === 'reservoir') return 'water';
+  if (tags.natural === 'wood' || tags.landuse === 'forest' || tags.landcover === 'trees') return 'forest';
+  if (tags.natural === 'scrub' || ['scrub', 'bushes'].includes(tags.landcover)) return 'scrub';
+  if (tags.landuse === 'farmland') return 'farmland';
+  if (['farmyard', 'meadow'].includes(tags.landuse)) return tags.landuse;
+  if (tags.landuse === 'orchard') return 'orchard';
+  if (
+    ['grass', 'recreation_ground', 'village_green'].includes(tags.landuse) ||
+    ['park', 'pitch', 'garden', 'playground', 'golf_course', 'sports_centre'].includes(tags.leisure) ||
+    ['grass', 'flowerbed'].includes(tags.landcover)
+  ) return 'managed-green';
+  if (['residential', 'commercial', 'retail', 'industrial'].includes(tags.landuse)) return 'built-district';
+  if (['construction', 'quarry', 'brownfield'].includes(tags.landuse)) return 'cleared';
+  return null;
+}
+
+/** Registry-backed surface, ownership, biome and parking treatment for a site. */
+export function siteTreatmentFor(tags, registry = loadSemanticRegistry()) {
+  const siteClass = siteClassFor(tags);
+  if (!siteClass) return null;
+  const mapping = resolveSemantic(registry, 'site.treatment', { siteClass });
+  if (!mapping) return null;
+  const restricted = ['private', 'no'].includes(tags?.access) || tags?.motor_vehicle === 'no';
+  return {
+    siteClass,
+    pixel: mapping.pixel ?? null,
+    surface: mapping.surface ?? null,
+    owner: mapping.owner ?? null,
+    parking: Boolean(mapping.parking) && !restricted,
+    mappingId: mapping.id,
+  };
+}
+
 /** Which grey a landuse/natural polygon paints, or null to leave it alone. */
-export function groundPixelFor(tags, table = loadTagTable()) {
+export function groundPixelFor(tags, table = loadTagTable(), registry = loadSemanticRegistry()) {
+  const treatment = siteTreatmentFor(tags, registry);
+  if (treatment?.pixel != null) return treatment.pixel;
+  // Keep the measured table as a compatibility fallback for retained semantics that
+  // have not yet graduated to an authored site treatment.
   for (const rule of table.ground) {
     const value = tags[rule.tag];
     if (value === undefined) continue;

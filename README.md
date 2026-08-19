@@ -51,9 +51,11 @@ map cell is binary. So when you press **Build this world** the helper fetches
 OpenStreetMap and writes the cells, while the game holds a progress screen in
 front of you until they are on disk.
 
-Launch Project Zomboid, enable **pz-world**, and start a **new** game. The panel
-opens at the main menu — type coordinates, pick a radius, watch it build. **F7**
-reopens it.
+Launch Project Zomboid, enable **pz-world**, and start a **new** game. Pick
+**PZWorld** on the world-select screen and press Next — the panel opens there, and
+only there, so nothing appears in front of you at launch or when you load an old
+save. Type coordinates, pick a radius, watch it build. **F7** opens the panel
+anywhere, at any time.
 
 You can also build a city straight from the command line, which is the same
 build the panel orders:
@@ -64,14 +66,59 @@ npm run world -- --lat 44.6995 --lon -73.4529 --radius 2500 --name "Plattsburgh,
 
 Three things that matter and are easy to get wrong:
 
-- **`npm run build` wipes the map directory**, blank canvas and all. Install the
-  mod first, build a city into it second.
+- **`npm run build` keeps a built world**, and copies in only map companions the
+  install does not already have. `npm run build -- --fresh` puts the blank canvas
+  back, which is what you want when the canvas format itself has changed.
 - **Quit the game before running `npm run world`.** The game keeps file handles open
   on map cells it has read, and on Windows rewriting an open file fails outright.
   The in-game panel does not have this problem: it builds at the main menu,
   before any cell has been opened.
 - **Start a new save.** A chunk you have already walked through is served from the
   save, not from the map, so an old save keeps the old world.
+
+---
+
+## Validate and benchmark
+
+Run the complete offline acceptance set after changing assets, surfaces, roads, or cell
+emission:
+
+```bash
+npm test
+npm run verify-inventory-assets
+npm run verify-semantic-registry
+npm run audit-real-world-fixtures
+npm run audit-tile-usage        # what artwork is actually on the ground
+npm run benchmark-asset-pipeline
+npm run verify -- mod
+npm run validate-asset-pipeline  # release gate; requires accepted Build 42 runtime evidence
+```
+
+`audit-tile-usage` counts placements per asset family and per tile across the emitted
+cells. It is the check that answers *which sprites are on the ground*, which is the
+question every other one of these can pass while getting wrong: the whole road-artwork
+pass was disconnected from the shipped world for months behind a green test suite
+(`docs/LIMITATIONS.md` §0). Run it before and after a change and diff the two.
+
+The benchmark writes `library/asset-pipeline-benchmark.json` and
+`docs/ASSET-PIPELINE-VALIDATION.md`. It records build time, heap delta, cell-file sizes,
+asset repetition, ownership collisions, and continuity at cell seams. `verify -- mod`
+re-reads all authored cells in Build 42's split `42/` + `common/` layout.
+
+Offline checks cannot prove that native collision, artwork, or chunk streaming behaves
+correctly. The installed `PZWorld_ValidationProbe.lua` observes a five-minute game run
+without altering map squares. In a **new Build 42 save**, cross at least 20 eight-square
+chunk boundaries and two 256-square cell boundaries, visually inspect the urban/rural/highway/bridge route described in the
+validation report, quit, and validate the captured console:
+
+```bash
+npm run validate-in-game-probe -- "<Zomboid user folder>/console.txt" \
+  --observations docs/runtime-observations.json
+```
+
+A passing command writes `library/in-game-probe-validation.json`. The run is not accepted
+without both that machine-readable record and the visual/collision checklist; absence of
+a transcript is reported as pending, never treated as a pass.
 
 ---
 
@@ -193,6 +240,7 @@ your install at generate time and never redistributed.
 | [docs/WORLDGEN.md](docs/WORLDGEN.md) | B42's runtime world generator as a modding surface. |
 | [docs/ORIENTATION.md](docs/ORIENTATION.md) | Bearings, oriented bounding boxes, rotating walls as lattice edges. |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The pipeline and module map. |
+| [docs/OSM-SEMANTICS.md](docs/OSM-SEMANTICS.md) | Generated inventory of every retained/discarded OSM element, geometry, and observed tag. |
 | [docs/PROTOTYPES.md](docs/PROTOTYPES.md) | Extraction, classification, fitting. |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Numbered decision log. |
 | [docs/LIMITATIONS.md](docs/LIMITATIONS.md) | What does not work, measured. |

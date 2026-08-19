@@ -1,53 +1,86 @@
 --[[
-    Getting the freshly written map in front of the player *this* session.
+    Making sure the freshly written map is in front of the player.
 
-    `PZWorld/WorldMap.lua` writes `common/media/maps/PZWorld/worldmap.xml`
-    during the build. Both the world map and the minimap look for exactly that
-    file — and neither of them finds it, because of when they look it up rather
-    than where.
+    ## How the game finds a map, and why it used not to find ours
 
-    Both do the same thing:
+    Both `ISWorldMap:initDataAndStyle` and `ISMiniMap.InitPlayer` do the same
+    thing, and neither of them looks at the world:
 
         local file = 'media/maps/'..dir..'/worldmap.xml'
         if fileExists(file) then mapAPI:addData(file) end
 
-    and `fileExists` is `new File(ZomboidFileSystem.getString(path)).exists()`.
-    `getString` answers from `activeFileMap`, a `HashMap` built once when the
-    mods are scanned, and returns its argument unchanged when the key is
-    missing — at which point the path is relative to the game's install
-    directory and of course does not exist. Our file is created several minutes
-    after that map was built, so for the rest of the session it is invisible by
-    name. It resolves fine on the *next* launch, which is a memorable way to
+    `fileExists` is `new File(ZomboidFileSystem.getString(path)).exists()`, and
+    `getString` answers from `activeFileMap` — a table built once while the mods
+    are scanned. A file created after that is invisible **by name** for the rest
+    of the session, and `getString` returns its argument unchanged when the key
+    is missing, at which point the path is relative to the install directory and
+    of course does not exist. That is why a city built minutes ago drew a blank
+    map, and why it drew correctly on the *next* launch: a memorable way to
     conclude the code is fine and the machine is haunted.
 
-    An absolute path sidesteps it: `getString` cannot relativise a path outside
-    the game folder, so it hands it straight back — which also means
-    `fileExists` on an absolute path is a plain `File.exists()` and can be
-    trusted. So each map screen is wrapped, and after vanilla has done its pass
-    we add the same file again by its absolute name.
+    So the fix is not here. `tools/make-canvas.js` now ships the name —
+    a stub `worldmap.xml` and an empty `worldmap.xml.bin` — so the lookup
+    succeeds at startup and `npm run world` only ever rewrites the `.bin`.
+    `WorldMapDataAssetManager.startLoading` prefers a `.bin` sibling whenever
+    one is present:
 
-    The guard is `fileExists` on the relative path: if that answers true then
-    the file was there at startup, vanilla has already loaded it, and adding it
-    a second time would draw every building twice.
+        Files.exists(path + ".bin") ? FileTask_LoadWorldMapBinary
+                                    : FileTask_LoadWorldMapXML
 
-    ## Nothing is added until the helper has compiled it
+    and the XML reader is broken — `WorldMapXML` hands `WorldMapPoints.setPoints`
+    a count of shorts where the binary reader hands a count of points, so it
+    reads twice as far as it wrote and throws `IndexOutOfBoundsException` out of
+    every single feature. The stub therefore exists to be found and never to be
+    read.
 
-    The game reads `worldmap.xml` only when there is no `worldmap.xml.bin`
-    beside it, and its XML reader is broken — `WorldMapXML` hands
-    `WorldMapPoints.setPoints` a count of shorts where the binary reader hands a
-    count of points, so it reads twice as far as it wrote and throws
-    `IndexOutOfBoundsException` out of every single feature. That is a blank map
-    and 32,670 stack traces, which is worse than a blank map on its own.
+    ## What is left for this file to do
 
-    The helper compiles the XML to `.bin` within a second of the build finishing
-    (see helper/serve.js). Until that file exists there is nothing worth adding,
-    so this says so once and leaves the map alone.
+    Two things, both fallbacks:
+
+      1. A mod installed before the canvas shipped that stub has no name to find.
+         An absolute path sidesteps `activeFileMap` entirely — `getString`
+         cannot relativise a path outside the game folder, so it hands it back
+         unchanged — and that is what this adds.
+
+      2. Saying so, once, when there is nothing to add. A blank map with no
+         message in the log is the hardest kind of bug to be told about.
+
+    The guard is `fileExists` on the relative path. If that answers true then
+    vanilla has already loaded the file and adding it again would draw every
+    building twice.
 ]]
 
 require "PZWorld/Config"
-require "PZWorld/WorldMap"
 
-local WorldMap = PZWorld.WorldMap
+local Config = PZWorld.Config
+
+-- The two facts this hook needs about the map file. They used to live in a
+-- module that also generated a whole world; that module is gone.
+local WorldMap = {}
+WorldMap.FILE = "media/maps/" .. Config.MAP_NAME .. "/worldmap.xml"
+
+--[[
+    The absolute path the map was written to.
+
+    Needed because `ZomboidFileSystem.activeFileMap` is built when the mods are
+    scanned and never again, so a file created during a build does not resolve
+    by its relative name for the rest of the session — `fileExists` returns
+    false and the vanilla map skips it. `getString` passes an unrecognised path
+    through unchanged, so an absolute one reaches the parser.
+]]
+function WorldMap.absolutePath()
+    if not getModInfoByID then return nil end
+    -- Guarded because this is a Java object reached through Kahlua: a method
+    -- that is not exposed reads as a nil index rather than as an error, and a
+    -- probe that fails silently is the trap DEV_GUIDE §1.10 is about.
+    local ok, common = pcall(function()
+        local info = getModInfoByID(Config.MOD_ID)
+        if not info then return nil end
+        return info:getCommonDir()
+    end)
+    if not ok or not common or common == "" then return nil end
+    return common .. "/" .. WorldMap.FILE
+end
 
 local PZWorldMap = {}
 PZWorld.MapHook = PZWorldMap
@@ -86,11 +119,18 @@ function PZWorldMap.attach(mapAPI, who)
     if not compiled then
         if not PZWorldMap.warned then
             PZWorldMap.warned = true
-            log("the map has not been compiled yet (" .. path .. ".bin is missing).")
-            log("  the helper does that a second after the build finishes: npm run helper")
-            log("  adding the .xml instead would throw once per feature, so it is left alone")
+            log("no map data yet: " .. path .. ".bin is missing.")
+            log("  build a world first (F7), or run: npm run world -- --lat .. --lon ..")
+            log("  the .xml beside it is a stub and is never parsed, so it is left alone")
         end
         return false
+    end
+
+    if not PZWorldMap.warned then
+        PZWorldMap.warned = true
+        log("this install predates the shipped worldmap.xml stub, so vanilla could not")
+        log("  find the map by name. Adding it by absolute path instead; re-running")
+        log("  `npm run canvas && npm run build` makes this unnecessary.")
     end
 
     local ok, err = pcall(function()

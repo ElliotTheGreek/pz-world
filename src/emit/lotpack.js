@@ -63,6 +63,7 @@ import { CELL_SIZE, CHUNK_SIZE, CHUNKS_PER_CELL, emptyLotHeader, writeLotHeader 
 import { emptyLotPack, writeLotPack, Cell } from '../formats/lotpack.js';
 import { headerPath, packPath, chunkDataPath } from '../formats/cell.js';
 import { writeChunkData, encodeChunkData, chunkBits } from './chunkdata.js';
+import { populationField, MAX_DISTANCE } from './population.js';
 
 /**
  * The deepest and highest level the game will read.
@@ -75,12 +76,18 @@ export const LEVEL_FLOOR = -32;
 export const LEVEL_CEILING = 31;
 
 /**
- * Per-chunk zombie intensity for a chunk with buildings over it, and for one more than
- * half covered. Vanilla's equivalents are 1 and 2; see `zombieDensity` for why these are
- * four times that. These two numbers are the dial for how busy a generated town is.
+ * Per-chunk zombie intensity for a chunk with buildings over it, and for one more
+ * than half covered — the fallback for a cell written on its own, outside a
+ * `CellGrid`. A whole map goes through `src/emit/population.js` instead, which
+ * builds the field vanilla actually writes: one that decays outward from
+ * built-up land across cell boundaries rather than stopping at a footprint.
+ *
+ * These are vanilla's own two commonest values, not multiples of them. The byte
+ * is read back out by `MapCollisionData` and handed to `n_initMetaChunk` in
+ * `PZPopMan64.dll`, and nothing in Muldraugh exceeds 10.
  */
-export const ZOMBIE_ROOFED = 8;
-export const ZOMBIE_DENSE = 16;
+export const ZOMBIE_ROOFED = 1;
+export const ZOMBIE_DENSE = 2;
 
 /**
  * The narrowest range a cell may declare, whatever its content.
@@ -316,6 +323,24 @@ export class CellBuilder {
    */
   zombieDensity() {
     const density = Buffer.alloc(CHUNKS_PER_CELL * CHUNKS_PER_CELL);
+    const covered = this.roofedChunks();
+    const perChunk = CHUNK_SIZE * CHUNK_SIZE;
+    for (let i = 0; i < density.length; i++) {
+      if (!covered[i]) continue;
+      density[i] = covered[i] >= perChunk / 2 ? ZOMBIE_DENSE : ZOMBIE_ROOFED;
+    }
+    return density;
+  }
+
+  /**
+   * How many of each chunk's 64 squares are inside a room.
+   *
+   * The population field is built from this rather than from the tiles, because
+   * that is what vanilla's own intensity tracks: `LotHeader` carries room rects
+   * and the measured relationship in `src/emit/population.js` is against roofed
+   * coverage, not against floor.
+   */
+  roofedChunks() {
     const covered = new Uint16Array(CHUNKS_PER_CELL * CHUNKS_PER_CELL);
 
     for (const room of this.rooms) {
@@ -333,12 +358,7 @@ export class CellBuilder {
       }
     }
 
-    const perChunk = CHUNK_SIZE * CHUNK_SIZE;
-    for (let i = 0; i < density.length; i++) {
-      if (!covered[i]) continue;
-      density[i] = covered[i] >= perChunk / 2 ? ZOMBIE_DENSE : ZOMBIE_ROOFED;
-    }
-    return density;
+    return covered;
   }
 
   /**
@@ -398,7 +418,9 @@ export class CellBuilder {
     this.header.buildings = this.buildings;
     this.header.minLevel = lo;
     this.header.maxLevel = hi;
-    this.header.density = this.zombieDensity();
+    // `CellGrid` fills this in from the whole-map field, which is the only place
+    // that can see how far this cell's chunks are from the next cell's buildings.
+    this.header.density = this.density ?? this.zombieDensity();
     this.pack = pack;
     this.cell = new Cell(this.header, pack);
     this.levels = levels;
@@ -488,9 +510,63 @@ export class CellGrid {
     return ids.length;
   }
 
-  write(dir, { log = () => {} } = {}) {
+  /**
+   * Lay the whole-map zombie intensity field over every cell.
+   *
+   * It has to be done here rather than per cell because the field decays outward
+   * from built-up land for up to twelve chunks — a street on the last chunk of
+   * one cell takes its intensity from the houses in the next one, and a cell
+   * computing its own would cut that off at its own edge. See
+   * `src/emit/population.js` for the measurement this reproduces.
+   */
+  applyPopulation(seed = '') {
+    if (!this.cells.size) return null;
+    let minCx = Infinity, minCy = Infinity, maxCx = -Infinity, maxCy = -Infinity;
+    for (const builder of this.cells.values()) {
+      minCx = Math.min(minCx, builder.cx); maxCx = Math.max(maxCx, builder.cx);
+      minCy = Math.min(minCy, builder.cy); maxCy = Math.max(maxCy, builder.cy);
+    }
+    // A margin of cells around the town so the decay is not clipped where the
+    // built area runs to the edge of what was generated.
+    const margin = Math.ceil(MAX_DISTANCE / CHUNKS_PER_CELL) + 1;
+    minCx -= margin; minCy -= margin; maxCx += margin; maxCy += margin;
+    const width = (maxCx - minCx + 1) * CHUNKS_PER_CELL;
+    const height = (maxCy - minCy + 1) * CHUNKS_PER_CELL;
+
+    const roofed = new Uint16Array(width * height);
+    for (const builder of this.cells.values()) {
+      const covered = builder.roofedChunks();
+      const ox = (builder.cx - minCx) * CHUNKS_PER_CELL;
+      const oy = (builder.cy - minCy) * CHUNKS_PER_CELL;
+      for (let i = 0; i < covered.length; i++) {
+        if (covered[i]) roofed[(ox + (i % CHUNKS_PER_CELL)) + (oy + ((i / CHUNKS_PER_CELL) | 0)) * width] = covered[i];
+      }
+    }
+
+    const field = populationField(roofed, width, height, seed);
+    let populated = 0;
+    let total = 0;
+    for (const builder of this.cells.values()) {
+      const density = Buffer.alloc(CHUNKS_PER_CELL * CHUNKS_PER_CELL);
+      const ox = (builder.cx - minCx) * CHUNKS_PER_CELL;
+      const oy = (builder.cy - minCy) * CHUNKS_PER_CELL;
+      for (let i = 0; i < density.length; i++) {
+        const v = field[(ox + (i % CHUNKS_PER_CELL)) + (oy + ((i / CHUNKS_PER_CELL) | 0)) * width];
+        density[i] = v;
+        total += v;
+        if (v) populated++;
+      }
+      builder.density = density;
+    }
+    const chunks = this.cells.size * CHUNKS_PER_CELL * CHUNKS_PER_CELL;
+    return { chunks, populated, mean: total / chunks };
+  }
+
+  write(dir, { log = () => {}, onCell = () => {} } = {}) {
     let bytes = 0;
     let incomplete = 0;
+    let done = 0;
+    const total = this.cells.size;
     for (const builder of this.cells.values()) {
       const holes = builder.incompleteChunks();
       if (holes.length) {
@@ -501,6 +577,7 @@ export class CellGrid {
         );
       }
       bytes += builder.write(dir);
+      onCell(++done, total);
     }
     return { cells: this.cells.size, bytes, incompleteChunks: incomplete };
   }

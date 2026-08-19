@@ -1,12 +1,23 @@
 --[[
     Client entry point.
 
-    The prompt has to appear before the world is generated, and the only moment
-    the mod reliably owns is the main menu — `NewGameScreen:clickPlay` hands
-    straight to the vanilla screens and wrapping it is fragile across builds. So
-    the panel opens once when the menu is first reached, the player picks a place
-    and watches it build, and then continues into the normal new-game flow with
-    `worldgen.static_modules` already populated on the server side.
+    ## When the panel opens, and why it used to open too early
+
+    It opened on `OnMainMenuEnter`, which is the first frame of the main menu.
+    That is wrong twice over: it lands in front of a player who has not said they
+    want to build anything, and it lands before they have chosen which world they
+    are playing — so a player loading an existing save got a build prompt for a
+    world they were not about to enter.
+
+    The moment that actually means "I am starting a new game in the pz-world
+    map" is `WorldSelect:clickNext`. `WorldSelect` is the screen `MapGroups`
+    drives; the mod ships `lots=PZWorld` in its own `map.info` so it forms its
+    own group and is listed there by name, and `clickNext` fires once, after the
+    player has picked a group and pressed on. So the panel is hooked there and
+    opens only when the group they picked contains our map directory.
+
+    F7 still opens it from anywhere, which is what to use for a second world, or
+    if the world-select screen never appears because no other map is installed.
 
     Everything is pcall-wrapped. A mod that throws here takes the main menu with
     it and the player has no way back.
@@ -31,13 +42,46 @@ local function openOnce()
     safe("open", function() PZWorldUI.open() end)
 end
 
-safe("menuHook", function()
-    if Events.OnMainMenuEnter then
-        Events.OnMainMenuEnter.Add(openOnce)
+--- Does the world group the player just chose contain our map directory?
+local function groupIsOurs(screen)
+    local items = screen and screen.listbox and screen.listbox.items
+    local selected = items and screen.listbox.selected
+    local entry = selected and items[selected]
+    local dirs = entry and entry.item and entry.item.mapDirs
+    if not dirs then return false end
+    for i = 1, dirs:size() do
+        if dirs:get(i - 1) == PZWorld.Config.MAP_NAME then return true end
+    end
+    return false
+end
+
+--[[
+    Open when — and only when — the player starts a new game in our world.
+
+    `clickNext` is called after the selection is made and before the next screen
+    appears, so the group is still readable off the list box. The original runs
+    first: whatever it does to screen visibility should happen with or without
+    this mod loaded.
+]]
+safe("worldSelectHook", function()
+    if not WorldSelect or not WorldSelect.clickNext then
+        print("PZWORLD: no WorldSelect screen in this build — press F7 to open the builder")
+        return
+    end
+    local original = WorldSelect.clickNext
+    function WorldSelect:clickNext()
+        local ours = false
+        local ok, result = pcall(groupIsOurs, self)
+        if ok then ours = result end
+        original(self)
+        if ours then
+            shown = false
+            openOnce()
+        end
     end
 end)
 
---- F7 reopens the builder without restarting the game.
+--- F7 opens the builder from anywhere, at any time.
 safe("keybind", function()
     Events.OnCustomUIKey.Add(function(key)
         if key == Keyboard.KEY_F7 then
@@ -108,4 +152,5 @@ safe("rescueKey", function()
     end)
 end)
 
-print("PZWORLD: client loaded (F7 = world builder, F8 = reveal map)")
+print("PZWORLD: client loaded. The builder opens when you start a new game in the")
+print("PZWORLD:   pz-world world; F7 opens it anywhere, F8 reveals the map, F9 rescues you.")

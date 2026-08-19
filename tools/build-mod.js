@@ -49,26 +49,16 @@ export function buildMod({ log = () => {} } = {}) {
   const luaRoot = path.join(MOD, '42/media/lua');
   const results = [];
 
-  // Client and shared scripts. Prototypes are generated separately by
-  // tools/emit-prototypes.js and already sit under mod/, so they are not copied.
-  for (const kind of ['client', 'shared', 'server']) {
+  // Client and shared scripts. There is no server script any more: the world is
+  // built by tools/build-world.js, run by the helper, so nothing needs the
+  // server Lua state's `worldgen` table.
+  for (const kind of ['client', 'shared']) {
     const from = path.join(SRC, kind);
     if (!fs.existsSync(from)) continue;
     walk(from, (file) => {
       if (!file.endsWith('.lua')) return;
       const rel = path.relative(from, file);
       copyLua(file, path.join(luaRoot, kind, rel), results);
-    });
-  }
-
-  // Check the generated prototype Lua too — it is machine-written, but a bad
-  // tile name or a broken table there fails exactly as silently.
-  const protoDir = path.join(luaRoot, 'shared/PZWorld/Prototypes');
-  if (fs.existsSync(protoDir)) {
-    walk(protoDir, (file) => {
-      if (!file.endsWith('.lua')) return;
-      const check = checkBlocks(fs.readFileSync(file, 'utf8'));
-      results.push({ file: path.relative(ROOT, file), ok: check.ok, reason: check.reason });
     });
   }
 
@@ -113,12 +103,24 @@ export function install({ log = () => {}, fresh = false } = {}) {
       if (entry.name === 'media') continue;
       fs.rmSync(path.join(dest, 'common', entry.name), { recursive: true, force: true });
     }
+    let added = 0;
     fs.cpSync(MOD, dest, { recursive: true, force: true, filter: (src) => {
       const rel = path.relative(MOD, src);
-      // Never overwrite anything inside the existing map directory.
-      return !(rel.startsWith(mapRel) && rel !== mapRel);
+      // Never overwrite anything inside the existing map directory — that is a
+      // built world nobody wants to lose to a Lua edit. A file the canvas has
+      // and the installed map does *not* is new, though, and skipping those
+      // would mean an existing install never receives a companion the canvas
+      // learned to ship: the `worldmap.xml` stub both map screens look up by
+      // name is exactly that, and without it the map stays blank for ever.
+      if (!rel.startsWith(mapRel) || rel === mapRel) return true;
+      if (fs.existsSync(path.join(dest, rel))) return false;
+      if (fs.statSync(src).isFile()) added++;
+      return true;
     } });
-    log(`installed to ${dest} (kept the built world; use --fresh to reset it)`);
+    log(
+      `installed to ${dest} (kept the built world; use --fresh to reset it)` +
+        (added ? `, added ${added} new map companion file(s)` : ''),
+    );
   } else {
     fs.rmSync(dest, { recursive: true, force: true });
     fs.cpSync(MOD, dest, { recursive: true });

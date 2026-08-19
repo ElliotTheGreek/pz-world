@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+  "fixtures": [
+    {
+      "id": "urban",
+      "file": "urban.osm.json",
+      "sourceCache": "overpass-bde2d261.json",
+      "anchorElement": "way/201652035",
+      "requiredFeatureClasses": [
+        "building",
+        "residential-road",
+        "sidewalk"
+      ],
+      "elements": 80,
+      "sha256": "03c3ac186e1ac99152e2e78dd39020464dcb51942c2ee4eb94f7cfef4f3be338"
+    },
+    {
+      "id": "suburban",
+      "file": "suburban.osm.json",
+      "sourceCache": "overpass-cb0bd519.json",
+      "anchorElement": "way/201652031",
+      "requiredFeatureClasses": [
+        "building",
+        "residential-road"
+      ],
+      "elements": 80,
+      "sha256": "1f65565b06578cec91acbd88c2532028d5add6e011a17943616a8ea5cdda419a"
+    },
+    {
+      "id": "rural",
+      "file": "rural.osm.json",
+      "sourceCache": "overpass-5925b01d.json",
+      "anchorElement": "way/766788213",
+      "requiredFeatureClasses": [
+        "rural-road"
+      ],
+      "elements": 80,
+      "sha256": "c26907d33cdc56908dc936a6f75e6bec485f47d26f4be30a74e0f89b49ab03df"
+    },
+    {
+      "id": "highway",
+      "file": "highway.osm.json",
+      "sourceCache": "overpass-5925b01d.json",
+      "anchorElement": "way/194109335",
+      "requiredFeatureClasses": [
+        "highway",
+        "shoulder",
+        "lane-marking"
+      ],
+      "elements": 80,
+      "sha256": "d24e750a1791d0e8a603d102112c86a5c0caffc9b08f58b8b9a5a0fc656c9284"
+    },
+    {
+      "id": "bridge",
+      "file": "bridge.osm.json",
+      "sourceCache": "overpass-5925b01d.json",
+      "anchorElement": "way/35971084",
+      "requiredFeatureClasses": [
+        "bridge",
+        "bridge-deck",
+        "bridge-edge"
+      ],
+      "elements": 80,
+      "sha256": "f0c17cc15c9c8f0ad8a4285dabc93935a5e79434d76629c8d39403e5f3e30b3e"
+    }
+  ]
+}

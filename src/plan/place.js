@@ -223,7 +223,10 @@ export function placeAuthored(footprints, refs, source, cat, opts) {
       turns: chosen.turns,
       cls: usedClass,
       requestedClass: wanted,
+      fid: footprint.fid ?? null,
       name: footprint.name ?? null,
+      tags: { ...(footprint.tags ?? {}) },
+      poiFids: [...(footprint.poiFids ?? [])],
       residualDeg: Math.abs(snap.residualDeg ?? 0),
     });
     stats.placed++;

@@ -192,6 +192,66 @@ check is whether the game *likes* the result; that still needs a play test.
 
 ---
 
+### D14 — Validation is layered; loose assets fail closed
+
+An asset is not considered supported merely because its tile name exists. Loose semantic
+mappings must pass inventory role, layer, facing, and installed-sheet checks; fixture
+builds must preserve topology and ownership; authored files must read back; and runtime
+behavior requires a separate in-game observation. The reproducible evidence is generated
+by `npm run benchmark-asset-pipeline` and documented in
+`docs/ASSET-PIPELINE-VALIDATION.md`.
+
+Unknown or incompatible loose artwork is excluded rather than guessed. Structural and
+decorative context-required tiles are only retained inside complete prefabs because a
+wall, roof, door, fixture, or container detached from its adjacency and room semantics
+can be visually wrong, non-colliding, or lose loot behavior despite resolving as a valid
+tile name. Malformed blend blocks and measured contradictory edge declarations are also
+excluded; each inventory record preserves the exact reason.
+
+Offline seam, collision-ownership, and format checks are acceptance gates, but they are
+not renamed “in-game validation.” Native chunk streaming, collision response, artwork,
+and frame pacing pass only when the observational probe and visual route are completed
+in a real Build 42 session.
+
+**Revisit if** the catalogue gains measured topology/rotation metadata for an excluded
+family, or Project Zomboid exposes a headless runtime capable of loading and walking map
+chunks with native collision enabled.
+
+---
+
+### D15 — Vanilla is measured, not imitated from memory
+
+When a question is "what does Project Zomboid's ground look like", the
+answer comes from reading the shipped cells, not from reasoning about what would look
+good.
+
+Three separate passes were built on plausible reasoning that turned out to be
+backwards, and each one is visible from orbit once it is wrong:
+
+- `baseTile` chose ground variants from a low-frequency field, on the reasoning that a
+  per-square hash would read as a uniform dither over a whole city. Vanilla uses a
+  per-square choice: 25.2 / 25.0 / 24.8 / 25.1 % across Grass_Dark's four variants, mean
+  run 1.30 squares. The field reached two of the four and changed them once a screen.
+- The patches a player sees are the *material* changing, at a median run of 3 squares and
+  a p90 of 19 — an order of magnitude finer than the 110-square field that was meant to
+  produce them.
+- Road wear was a `d_streetcracks` overlay. Vanilla places **zero** of those in the
+  sample and gets its worn look from three asphalt materials in patches, 46 / 34 / 20 %.
+
+Each of these is a twenty-line probe against the install (`tools/audit-tile-usage.mjs`
+and the same readers the extractor uses) and each overturned a design decision that had
+survived review, tests and a shipped build.
+
+The cost is that a probe is slower to write than an assumption, and that the
+measurements are of Muldraugh — a hand-authored Kentucky town, not every place on Earth.
+Where a share is a choice rather than a measurement (`REGIONAL_TILT`, `CLASS_AGE`, the
+managed-ground profiles) it says so in the code.
+
+**Revisit if** a Build 42 update reshuffles the blend sheets, which would move every
+share here at once and is exactly what re-running the probes is for.
+
+---
+
 ## Still open
 
 1. **A native crash a few seconds into play.** The first authored build with

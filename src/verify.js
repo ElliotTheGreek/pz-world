@@ -16,6 +16,7 @@ import path from 'node:path';
 import { readLotHeader, CELL_SIZE } from './formats/lotheader.js';
 import { readLotPack } from './formats/lotpack.js';
 import { decodePng } from './formats/png.js';
+import { decodeWorldMapBin } from './formats/worldmap.js';
 import { loadTileCatalogue } from './formats/tiledefs.js';
 import { findInstall, readMapTileNames } from './lib/pzinstall.js';
 
@@ -63,17 +64,29 @@ export function verifyMod(dir, opts = {}) {
     return { problems, stats };
   }
 
-  const mapsRoot = path.join(root, 'media/maps');
+  // Build 42 loads scripts and metadata from 42/, but MapGroups only discovers maps
+  // under common/media/maps. Older generated mods may still keep both under one root.
+  const commonMapsRoot = path.join(dir, 'common', 'media', 'maps');
+  const versionMapsRoot = path.join(root, 'media', 'maps');
+  const mapsRoot = fs.existsSync(commonMapsRoot) ? commonMapsRoot : versionMapsRoot;
   if (!fs.existsSync(mapsRoot)) {
-    problems.push('no media/maps directory');
+    problems.push('no media/maps directory (checked common/ and the version root)');
     return { problems, stats };
   }
-  const mapName = fs.readdirSync(mapsRoot)[0];
+  const mapNames = fs.readdirSync(mapsRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+  if (!mapNames.length) {
+    problems.push('media/maps contains no map directory');
+    return { problems, stats };
+  }
+  const mapName = mapNames[0];
   const mapDir = path.join(mapsRoot, mapName);
 
-  for (const required of ['map.info', 'WorldGenOverride.lua', 'spawnpoints.lua']) {
+  for (const required of ['map.info', 'spawnpoints.lua']) {
     if (!fs.existsSync(path.join(mapDir, required))) problems.push(`missing ${required}`);
   }
+  const hasWorldgenOverride = fs.existsSync(path.join(mapDir, 'WorldGenOverride.lua'));
 
   // ---- cells ------------------------------------------------------------
   for (const f of fs.readdirSync(mapDir)) {
@@ -84,6 +97,10 @@ export function verifyMod(dir, opts = {}) {
     const cy = +m[2];
     try {
       const header = readLotHeader(fs.readFileSync(path.join(mapDir, f)));
+      for (const tile of header.tiles) {
+        stats.tiles++;
+        if (!tileExists(tile)) problems.push(`cell ${cx}_${cy}: unknown tile ${tile}`);
+      }
       readLotPack(fs.readFileSync(path.join(mapDir, `world_${cx}_${cy}.lotpack`)), {
         levels: header.maxLevel - header.minLevel + 1,
         chunkSize: header.chunkW,
@@ -127,13 +144,13 @@ export function verifyMod(dir, opts = {}) {
       stats.tiles += issues.tiles;
       problems.push(...issues.problems);
     }
-  } else {
-    problems.push('no prefab directory');
+  } else if (hasWorldgenOverride) {
+    problems.push('WorldGenOverride.lua exists but there is no prefab directory');
   }
 
   // ---- static modules ---------------------------------------------------
   const overridePath = path.join(mapDir, 'WorldGenOverride.lua');
-  if (fs.existsSync(overridePath)) {
+  if (hasWorldgenOverride) {
     const text = fs.readFileSync(overridePath, 'utf8');
     for (const m of text.matchAll(/prefab = worldgen\.prefabs\.(\w+)/g)) {
       stats.modules++;
@@ -146,10 +163,44 @@ export function verifyMod(dir, opts = {}) {
     }
   }
 
+  // ---- the in-game map --------------------------------------------------
+  //
+  // Checked here because it is the one thing in the mod that can be silently
+  // destroyed *after* a good build. The map screen loads an empty `.bin` without
+  // complaint and draws nothing, so a blank map looks identical to a working
+  // one until somebody opens it. Both times it has been reported, the cells were
+  // fine and only this file was empty.
+  const mapBin = path.join(mapDir, 'worldmap.xml.bin');
+  const mapXml = path.join(mapDir, 'worldmap.xml');
+  if (!fs.existsSync(mapXml)) {
+    // Both map screens look the name up through `ZomboidFileSystem.activeFileMap`,
+    // a table built while the mods are scanned. No name at startup, no map for
+    // the whole session however good the `.bin` beside it is.
+    problems.push('worldmap.xml is missing, so neither the map nor the minimap will look for the map data');
+  }
+  if (!fs.existsSync(mapBin)) {
+    problems.push('worldmap.xml.bin is missing — the map screen will be blank');
+  } else {
+    try {
+      const map = decodeWorldMapBin(fs.readFileSync(mapBin));
+      stats.mapCells = map.cells?.length ?? 0;
+      stats.mapFeatures = (map.cells ?? []).reduce((n, c) => n + (c.features?.length ?? 0), 0);
+      if (!stats.mapFeatures) {
+        problems.push(
+          `worldmap.xml.bin has no features in it (${map.width}x${map.height}, ${stats.mapCells} cells) — `
+            + 'the map and minimap will be blank. Re-run `npm run world` with Project Zomboid closed.',
+        );
+      }
+    } catch (err) {
+      problems.push(`worldmap.xml.bin will not read: ${err.message}`);
+    }
+  }
+
   log(
     `verified ${stats.cells} cells, ${stats.prefabs} prefabs (${stats.tiles} tile references), ` +
       `${stats.modules} placements`,
   );
+  if (stats.mapFeatures) log(`  in-game map: ${stats.mapFeatures} features in ${stats.mapCells} cells`);
   return { problems, stats };
 }
 

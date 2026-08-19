@@ -38,14 +38,26 @@ import { fetchArea, normalise, checkRadius, ATTRIBUTION } from '../src/sources/o
 import { bboxAround } from '../src/geo/project.js';
 import { generateWorld } from '../src/emit/generate.js';
 import { buildWorldMapDoc, encodeWorldMap } from '../src/emit/worldmap.js';
+import {
+  decodeWorldMapBin,
+  encodeWorldMapXml,
+  assertXmlMatchesBin,
+} from '../src/formats/worldmap.js';
 import { loadTileCatalogue } from '../src/formats/tiledefs.js';
 import { findInstall, findUserFolder } from '../src/lib/pzinstall.js';
 import { indexInstall } from '../src/extract/building.js';
-import { MAP_NAME, MOD_ID } from './make-canvas.js';
+import {
+  assertValidSemanticRegistry,
+  compatibleSemanticRegistry,
+  createAssetCompatibility,
+  loadSemanticRegistry,
+} from '../src/catalogue/semantic-registry.js';
+import { MAP_NAME, MOD_ID, CANVAS_CELLS } from './make-canvas.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const LIBRARY = path.join(ROOT, 'library/buildings.json');
+const ASSET_INVENTORY = path.join(ROOT, 'library/asset-inventory.json');
 
 function parseArgs(argv) {
   const out = {};
@@ -116,6 +128,17 @@ export async function buildWorld(opts) {
   log(`building ${opts.name ?? 'the world'} at ${lat}, ${lon}, radius ${radiusM} m`);
   onProgress({ stage: 'fetching', progress: 0.02, message: 'Reading your Project Zomboid install' });
   const catalogue = loadTileCatalogue(install);
+  const inventory = JSON.parse(fs.readFileSync(ASSET_INVENTORY, 'utf8'));
+  const sourceRegistry = loadSemanticRegistry();
+  const assetCompatibility = createAssetCompatibility(inventory, catalogue);
+  const validation = assertValidSemanticRegistry(sourceRegistry, inventory, {
+    compatibility: assetCompatibility,
+  });
+  const semanticRegistry = compatibleSemanticRegistry(sourceRegistry, assetCompatibility);
+  if (validation.warnings.length) {
+    for (const warning of validation.warnings) log(`  asset warning: ${warning}`);
+  }
+  log(`validated ${validation.referencedAssets} semantic assets against the installed tilesets`);
   const library = loadLibrary(install, { log });
 
   onProgress({ stage: 'fetching', progress: 0.05, message: 'Asking OpenStreetMap for the area' });
@@ -136,6 +159,7 @@ export async function buildWorld(opts) {
     seed: opts.seed ?? `${lat},${lon}`,
     library,
     catalogue,
+    semanticRegistry,
     mapDir,
     log: (m) => log(`  ${m}`),
     onProgress,
@@ -150,12 +174,47 @@ export async function buildWorld(opts) {
     cover: result.cover ?? [],
     bounds: result.bounds,
   });
+  // Declared at the canvas's own size, not at the town's.
+  //
+  // The helper recompiles this file from the XML beside it and forces
+  // `CANVAS_CELLS` when it does (`helper/serve.js compileMapIfChanged`). Writing
+  // anything else here means the map changes shape the first time the helper
+  // ticks. Every cell coordinate is absolute and the canvas contains them all,
+  // so declaring the canvas costs nothing and makes the two writers agree.
+  doc.width = CANVAS_CELLS;
+  doc.height = CANVAS_CELLS;
+  doc.originX = 0;
+  doc.originY = 0;
+
   const bin = encodeWorldMap(doc);
-  fs.writeFileSync(path.join(mapDir, 'worldmap.xml.bin'), bin);
-  // A stale `.xml` beside it would be read only if the `.bin` were missing, and the
-  // game's XML reader is broken — so it is removed rather than left to be found.
-  fs.rmSync(path.join(mapDir, 'worldmap.xml'), { force: true });
-  log(`  map: ${doc.features} features in ${doc.cells.length} cells, ${(bin.length / 1e6).toFixed(1)} MB`);
+  const xml = encodeWorldMapXml(doc);
+
+  // The `.bin` is what the game reads; the `.xml` is what the *helper* reads.
+  //
+  // Both map screens resolve the name through `ZomboidFileSystem.activeFileMap`,
+  // a table built while the mods are scanned, so `worldmap.xml` has to exist at
+  // startup or neither screen ever asks for the data — that is one bug. The
+  // other is that the helper watches that same file and rebuilds the `.bin` from
+  // it on any change, so leaving a *stub* there means the stub becomes the map.
+  // Deleting the file fixes the second bug by causing the first.
+  //
+  // Writing the real map in both forms ends the argument: the name is there for
+  // the scan, and the helper recompiling it produces the identical file. The
+  // assertion below is what makes that a fact rather than an intention.
+  // XML first, then the binary — the order matters while the helper is running.
+  //
+  // The helper compiles on a change to the `.xml`. Writing the `.bin` first
+  // leaves a window in which it can compile the *previous* `.xml` — a stub, or
+  // the empty file an interrupted in-game build left behind — straight over the
+  // binary just written. With the XML updated first, the worst a tick landing
+  // mid-write can do is produce the very bytes the next line writes anyway.
+  atomicWrite(path.join(mapDir, 'worldmap.xml'), xml);
+  atomicWrite(path.join(mapDir, 'worldmap.xml.bin'), bin);
+  assertXmlMatchesBin(xml, bin, { width: CANVAS_CELLS, height: CANVAS_CELLS });
+
+  log(`  map: ${doc.features} features in ${doc.cells.length} cells, `
+    + `${(bin.length / 1e6).toFixed(1)} MB binary, ${(xml.length / 1e6).toFixed(1)} MB xml`);
+  checkMapOnDisk(mapDir, doc, log);
 
   writeSpawnPoints(mapDir, result);
   writeAttribution(mapDir, { lat, lon, radiusM, name: opts.name });
@@ -177,6 +236,84 @@ export async function buildWorld(opts) {
   log('');
   log('Quit Project Zomboid before running this, and start a NEW save to see the world.');
   return result;
+}
+
+/**
+ * Write through a temporary file and rename, so no reader ever sees half a map.
+ *
+ * `worldmap.xml` is 3.2 MB and the helper polls it every 400 ms to keep the
+ * `.bin` in step. A plain `writeFileSync` truncates and refills in place, so a
+ * poll landing inside that window reads a file that is part new and part old —
+ * and because the tail is still the previous run's, it can even end in a
+ * `</world>` and pass the helper's completeness check. Measured while a second
+ * helper was watching a build: the map compiled to 9,825 features, then 9,822,
+ * where the build had written 9,832. Ten features vanished into a race.
+ *
+ * `rename` within a directory is atomic, so a reader gets the old file or the
+ * new one and never a splice of both. The retry loop is for Windows: the game
+ * and the helper both poll these paths, and a rename onto a file somebody holds
+ * open fails with EPERM. Failing back to an in-place write is still better than
+ * not writing at all, and it is what the old helper did for the same reason.
+ */
+function atomicWrite(file, body) {
+  const tmp = `${file}.tmp`;
+  try {
+    fs.writeFileSync(tmp, body);
+  } catch {
+    fs.writeFileSync(file, body);
+    return;
+  }
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try {
+      fs.renameSync(tmp, file);
+      return;
+    } catch (err) {
+      if (err.code !== 'EPERM' && err.code !== 'EBUSY' && err.code !== 'EACCES') break;
+      const until = Date.now() + 10 * 2 ** attempt;
+      while (Date.now() < until) { /* no sync sleep is available here */ }
+    }
+  }
+  fs.writeFileSync(file, body);
+  try {
+    fs.rmSync(tmp, { force: true });
+  } catch {
+    /* a stray temp file is harmless */
+  }
+}
+
+/**
+ * Read the map back off disk and refuse to finish quietly if it is empty.
+ *
+ * A blank in-game map has now been reported twice, and both times the build
+ * said it had written thousands of features while the file next to the cells
+ * held none. Nothing downstream notices: `WorldMapDataAssetManager` loads an
+ * empty `.bin` perfectly happily and draws nothing, so the first sign of it is
+ * a player opening the map an hour later.
+ *
+ * Reading the file back costs milliseconds against a six-minute build, and it
+ * catches both halves of the failure — a doc that came out empty, and a file
+ * that something else replaced between the write and here.
+ */
+function checkMapOnDisk(mapDir, doc, log) {
+  const file = path.join(mapDir, 'worldmap.xml.bin');
+  let back;
+  try {
+    back = decodeWorldMapBin(fs.readFileSync(file));
+  } catch (err) {
+    throw new Error(`the in-game map was written but will not read back: ${err.message}`);
+  }
+  const cells = back.cells?.length ?? 0;
+  if (cells !== doc.cells.length) {
+    throw new Error(
+      `the in-game map on disk has ${cells} cells, not the ${doc.cells.length} just written — `
+        + 'something replaced it. A running Project Zomboid is the usual cause: the in-game '
+        + 'builder calls WorldMap.reset(), which empties worldmap.xml.',
+    );
+  }
+  if (doc.features === 0) {
+    throw new Error('the in-game map came out with no features in it; the map screen would be blank');
+  }
+  log(`  map verified on disk: ${cells} cells`);
 }
 
 /** Spawn every profession where the town actually is. */

@@ -83,6 +83,8 @@ export class TileCatalogue {
     this.cornerParts = new Map();
     /** tileset name -> number of tiles on the sheet (width × height) */
     this.sheetSize = new Map();
+    /** tileset name -> the declared sheet geometry */
+    this.sheetDimensions = new Map();
   }
 
   /**
@@ -392,7 +394,10 @@ export function parseTileDefs(text, cat) {
       const [w, h] = value.split(',');
       sheetW = parseInt(w, 10) || 0;
       sheetH = parseInt(h, 10) || 0;
-      if (tileset && sheetW && sheetH) cat.sheetSize.set(tileset, sheetW * sheetH);
+      if (tileset && sheetW && sheetH) {
+        cat.sheetSize.set(tileset, sheetW * sheetH);
+        cat.sheetDimensions.set(tileset, { width: sheetW, height: sheetH });
+      }
     }
   }
 }

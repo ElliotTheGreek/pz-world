@@ -83,7 +83,10 @@ export const BUILDING_REACH = 12;
 export const BUILDING_SHARE = 1;
 
 /** Surfaces a car may stand on. */
-const PAVED = new Set(['road', 'gravel', 'pavement']);
+// Every hard material a car can stand on. `roadWorn` and `roadPatched` are the
+// other two asphalts a carriageway is made of; leaving them out here quietly cut
+// a city's parking stalls by two thirds, because most tarmac is not Road_06.
+const PAVED = new Set(['road', 'roadWorn', 'roadPatched', 'gravel', 'pavement']);
 
 /** Road classes that get kerbside parking. A slip road through a wood does not. */
 const KERBSIDE_CLASSES = new Set(['residential', 'tertiary', 'secondary', 'unclassified', 'service']);
@@ -125,6 +128,26 @@ function rectFree(free, x, y, w, h) {
   return true;
 }
 
+/** Half-open point-in-polygon test, sampled at square centres for site ownership. */
+export function pointInPolygon(x, y, points) {
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const [xi, yi] = points[i];
+    const [xj, yj] = points[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function rectInsidePolygon(x, y, w, h, points) {
+  for (let dy = 0; dy < h; dy++) {
+    for (let dx = 0; dx < w; dx++) {
+      if (!pointInPolygon(x + dx + 0.5, y + dy + 0.5, points)) return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Tile a car park with stalls.
  *
@@ -151,7 +174,9 @@ export function stallsInArea(points, free, { max = 60 } = {}) {
   const out = [];
   for (let y = Math.ceil(minY); y + h <= maxY && out.length < max; y += h) {
     for (let x = Math.ceil(minX); x + w <= maxX && out.length < max; x += w) {
-      if (rectFree(free, x, y, w, h)) out.push({ name: '', type: 'ParkingStall', x, y, z: 0, width: w, height: h });
+      if (rectInsidePolygon(x, y, w, h, points) && rectFree(free, x, y, w, h)) {
+        out.push({ name: '', type: 'ParkingStall', x, y, z: 0, width: w, height: h });
+      }
     }
   }
   return out;
@@ -287,8 +312,10 @@ export function planParking({
   // Car parks first: a mapped lot is the one place a car certainly belongs.
   let areas = 0;
   for (const area of cover) {
-    if (area.pixel !== 200) continue;
-    const found = stallsInArea(area.points, free);
+    if (area.pixel !== 200 || area.treatment?.parking === false) continue;
+    const capacity = Number.parseInt(area.tags?.capacity, 10);
+    const max = Number.isFinite(capacity) && capacity >= 0 ? Math.min(60, capacity) : 60;
+    const found = stallsInArea(area.points, free, { max });
     if (found.length) areas++;
     for (const s of found) if (!taken(s)) claim(s);
   }

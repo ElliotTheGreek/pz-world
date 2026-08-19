@@ -5,8 +5,8 @@
  * This is the one piece of binary map data pz-world needs, and it is
  * deliberately **city-agnostic**: the same empty cells whatever coordinates the
  * player types in. Everything that makes it a particular city — roads,
- * buildings, ground — is added at runtime from Lua through
- * `worldgen.static_modules`, which is why nothing here mentions a place.
+ * buildings, ground — is written over these cells by `tools/build-world.js`
+ * when a world is ordered, which is why nothing here mentions a place.
  *
  * Why it has to exist at all: Project Zomboid Lua writes text only
  * (`getModFileWriter` hands back an `OutputStreamWriter`), so the game cannot
@@ -28,6 +28,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeLotHeader, emptyLotHeader, CELL_SIZE } from '../src/formats/lotheader.js';
 import { writeLotPack, emptyLotPack } from '../src/formats/lotpack.js';
 import { encodeIndexedPng } from '../src/formats/png.js';
+import { encodeWorldMapBin, assertXmlMatchesBin } from '../src/formats/worldmap.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -168,6 +169,71 @@ export function buildCanvas(outDir, { cells = CANVAS_CELLS, log = () => {} } = {
   );
 
   fs.writeFileSync(path.join(mapDir, 'objects.lua'), 'objects = {}\n', 'utf8');
+
+  // ---- the in-game map -------------------------------------------------
+  //
+  // Both the world map and the minimap look up `worldmap.xml` **by name**, and
+  // the name has to be there when the game starts, not when the city is built:
+  //
+  //     local file = 'media/maps/'..dirs:get(i-1)..'/worldmap.xml'
+  //     if fileExists(file) then INNER.mapAPI:addData(file) end
+  //
+  // `fileExists` answers from `ZomboidFileSystem.activeFileMap`, a table built
+  // once while the mods are scanned. A file created minutes later is invisible
+  // to it for the rest of the session — which is why a freshly generated city
+  // had a blank map and a blank minimap until the *next* launch.
+  //
+  // So the canvas ships the name. `WorldMapDataAssetManager.startLoading` then
+  // decides what to read from it:
+  //
+  //     Files.exists(path + ".bin") ? FileTask_LoadWorldMapBinary
+  //                                 : FileTask_LoadWorldMapXML
+  //
+  // and the XML reader is broken — `WorldMapXML` hands `WorldMapPoints.setPoints`
+  // a count of shorts where the binary reader hands a count of points, so it
+  // throws `IndexOutOfBounds` out of every feature. The `.xml` is therefore a
+  // stub that exists to be found and never to be read, and an empty but valid
+  // `.bin` ships beside it so a canvas with no city yet still loads cleanly.
+  // `npm run world` overwrites the `.bin` and leaves the stub alone.
+  //
+  // A **complete** empty document, closing tag and all. The helper skips a file
+  // with no `</world>` in it, treating it as one still being written, and re-reads
+  // it on every tick for the life of the session. Closing it properly means the
+  // helper compiles it once, to the same empty map written on the next line, and
+  // then leaves it alone.
+  fs.writeFileSync(
+    path.join(mapDir, 'worldmap.xml'),
+    [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<!-- Placeholder until a city is built. The game reads worldmap.xml.bin',
+      '     beside this file; this exists so fileExists() finds the name at',
+      '     startup, and so the helper has something valid to compile. -->',
+      '<world version="1.0">',
+      '</world>',
+      '',
+    ].join('\r\n'),
+    'utf8',
+  );
+  const blankMap = encodeWorldMapBin({ width: cells, height: cells, originX: 0, originY: 0, cells: [] });
+  fs.writeFileSync(path.join(mapDir, 'worldmap.xml.bin'), blankMap);
+  // The helper recompiles the `.bin` from the `.xml` whenever the `.xml` changes,
+  // so the pair has to agree even while the canvas is still empty — otherwise the
+  // first helper tick after an install rewrites a file nobody touched. Checked
+  // rather than assumed, because that is the exact class of bug that put a stub
+  // where a city's map should have been.
+  assertXmlMatchesBin(
+    fs.readFileSync(path.join(mapDir, 'worldmap.xml'), 'utf8'),
+    blankMap,
+    { width: cells, height: cells },
+  );
+
+  // Street names come from a separate file and are looked up the same way, so
+  // it ships empty for the same reason.
+  fs.writeFileSync(
+    path.join(mapDir, 'streets.xml'),
+    '<?xml version="1.0" encoding="UTF-8"?>\n<streets/>\n',
+    'utf8',
+  );
 
   // A plain thumbnail; every vanilla town folder carries one.
   const thumbPx = new Uint8Array(256 * 256).fill(DEFAULT_BIOME);

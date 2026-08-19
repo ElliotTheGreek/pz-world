@@ -11,129 +11,102 @@
 // from what Muldraugh's own cells actually use, so they are known to exist.
 {
   // Bands measured outward from the carriageway edge, in squares.
+  //
+  // One square of pavement, not two. Walking outward from all 67,254 kerb squares
+  // in the sixteen busiest Muldraugh cells, the pavement beside a kerb is one
+  // square wide 63% of the time and two squares 13%; the rest of the time the
+  // kerb has grass or a driveway directly against it. Two squares everywhere made
+  // every street in a generated city read as twice as wide as it should be.
   "bands": {
     "kerb": 1,
-    "sidewalk": 2,
+    "sidewalk": 1,
     "verge": 1
   },
 
-  // Sidewalks are not drawn along every rural lane. A road only gets one where
-  // the surroundings are built up — the same gate Terrula applies, for the same
-  // reason: the character of the ground beside a road follows the place, not
-  // the road's class alone.
-  "sidewalkClasses": ["motorway", "trunk", "primary", "secondary", "residential", "service"],
-
-  // `highway=*` to a class and a carriageway width in squares (both
-  // directions). OSM has lane counts often enough to be worth using, and
-  // `widthPerLane` is applied when `lanes` is present.
-  "highway": {
-    "motorway":       { "class": "motorway",    "width": 14 },
-    "motorway_link":  { "class": "motorway",    "width": 7 },
-    "trunk":          { "class": "trunk",       "width": 12 },
-    "trunk_link":     { "class": "trunk",       "width": 7 },
-    "primary":        { "class": "primary",     "width": 11 },
-    "primary_link":   { "class": "primary",     "width": 7 },
-    "secondary":      { "class": "secondary",   "width": 9 },
-    "secondary_link": { "class": "secondary",   "width": 7 },
-    "tertiary":       { "class": "secondary",   "width": 8 },
-    "residential":    { "class": "residential", "width": 7 },
-    "unclassified":   { "class": "residential", "width": 6 },
-    "living_street":  { "class": "residential", "width": 6 },
-    "service":        { "class": "service",     "width": 4 },
-    "track":          { "class": "track",       "width": 3 },
-    "footway":        { "class": "footway",     "width": 2 },
-    "path":           { "class": "footway",     "width": 2 },
-    "pedestrian":     { "class": "footway",     "width": 3 },
-    "cycleway":       { "class": "cycleway",    "width": 2 },
-    "steps":          { "class": "footway",     "width": 2 }
+  // Limited-access roads use a separate renderer. Shoulders sit outside the
+  // carriageway, verges replace urban kerbs/sidewalks, and markings are
+  // repeated in world squares so sparse OSM data still reads as a highway.
+  "highwayArtwork": {
+    "verge": 2,
+    "edgeLineInset": 0.5,
+    "markingPeriod": 6,
+    "markingLength": 4
   },
 
-  "widthPerLane": 3.5,
+  // Roads outside built-up land use a soft-edged cross-section. A single
+  // centre line is reserved for tagged/major paved roads; quiet lanes and
+  // tracks remain unmarked. Ditches are shallow ground bands rather than
+  // furniture, since the installed catalogue has no safe continuous ditch
+  // object family for arbitrary bearings.
+  //
+  // The centre line is continuous. Vanilla's two-lane roads carry an unbroken
+  // yellow line and so do the American roads they are drawn from; a 5-on/5-off
+  // dash also fell apart on any bearing off the grid axes, because the squares
+  // of a diagonal run advance along the centreline by √2 rather than 1 and the
+  // repeat skipped values. A dashed lane divider still belongs on a highway,
+  // where `highwayArtwork` owns it.
+  "ruralArtwork": {
+    "verge": 1,
+    "ditch": 1,
+    "centreLineContinuous": true,
+    "markedHierarchies": ["arterial", "collector"]
+  },
+
+  // `class` remains the artwork/decay class consumed by existing emitters.
+  // `hierarchy` is the functional hierarchy used by the cross-section model.
+  // Keeping these separate lets (for example) an unclassified rural road use
+  // compatible residential artwork without pretending it is residential.
+  "highway": {
+    "motorway":       { "class": "motorway",    "hierarchy": "highway" },
+    "motorway_link":  { "class": "motorway",    "hierarchy": "highway",     "lanes": 1, "median": 0 },
+    "trunk":          { "class": "trunk",       "hierarchy": "highway" },
+    "trunk_link":     { "class": "trunk",       "hierarchy": "highway",     "lanes": 1, "median": 0 },
+    "primary":        { "class": "primary",     "hierarchy": "arterial" },
+    "primary_link":   { "class": "primary",     "hierarchy": "arterial",    "lanes": 1 },
+    "secondary":      { "class": "secondary",   "hierarchy": "arterial" },
+    "secondary_link": { "class": "secondary",   "hierarchy": "arterial",    "lanes": 1 },
+    "tertiary":       { "class": "secondary",   "hierarchy": "collector" },
+    "tertiary_link":  { "class": "secondary",   "hierarchy": "collector",   "lanes": 1 },
+    "residential":    { "class": "residential", "hierarchy": "residential" },
+    "unclassified":   { "class": "residential", "hierarchy": "rural" },
+    "living_street":  { "class": "residential", "hierarchy": "residential" },
+    "service":        { "class": "service",     "hierarchy": "service" },
+    "track":          { "class": "track",       "hierarchy": "track" },
+    "footway":        { "class": "footway",     "hierarchy": "path",        "surface": "paved" },
+    "path":           { "class": "footway",     "hierarchy": "path" },
+    "pedestrian":     { "class": "footway",     "hierarchy": "path",        "surface": "paved" },
+    "cycleway":       { "class": "cycleway",    "hierarchy": "path",        "surface": "paved" },
+    "steps":          { "class": "footway",     "hierarchy": "path",        "surface": "paved" }
+  },
+
+  // Explicit sparse-data fallbacks. Widths are world squares (one square per
+  // source metre at the default projection). Side facilities are per side.
+  // OSM tags override these values; `implicit` means built-up context decides.
+  "crossSections": {
+    "highway":     { "lanes": 4, "laneWidth": 3.5, "surface": "asphalt", "shoulder": 2,   "sidewalk": 0,          "cycleway": 0, "parking": 0, "median": 2 },
+    "arterial":    { "lanes": 2, "laneWidth": 3.5, "surface": "asphalt", "shoulder": 0.5, "sidewalk": "implicit", "cycleway": 0, "parking": 0, "median": 0 },
+    "collector":   { "lanes": 2, "laneWidth": 3.25,"surface": "asphalt", "shoulder": 0,   "sidewalk": "implicit", "cycleway": 0, "parking": 0, "median": 0 },
+    "residential": { "lanes": 2, "laneWidth": 3,   "surface": "asphalt", "shoulder": 0,   "sidewalk": "implicit", "cycleway": 0, "parking": 0, "median": 0 },
+    "service":     { "lanes": 1, "laneWidth": 4,   "surface": "asphalt", "shoulder": 0,   "sidewalk": 0,          "cycleway": 0, "parking": 0, "median": 0 },
+    "alley":       { "lanes": 1, "laneWidth": 3,   "surface": "asphalt", "shoulder": 0,   "sidewalk": 0,          "cycleway": 0, "parking": 0, "median": 0 },
+    "rural":       { "lanes": 2, "laneWidth": 3,   "surface": "asphalt", "shoulder": 1,   "sidewalk": 0,          "cycleway": 0, "parking": 0, "median": 0 },
+    "track":       { "lanes": 1, "laneWidth": 3,   "surface": "unpaved", "shoulder": 0,   "sidewalk": 0,          "cycleway": 0, "parking": 0, "median": 0 },
+    "path":        { "lanes": 1, "laneWidth": 2,   "surface": "unpaved", "shoulder": 0,   "sidewalk": 0,          "cycleway": 0, "parking": 0, "median": 0 }
+  },
+
+  "facilityWidths": {
+    "sidewalk": 1,
+    "cycleway": 2,
+    "parking": 2.5,
+    "shoulder": 1,
+    "median": 1
+  },
 
   // Highway values that are not roads on the ground and must not be burned.
   "ignore": ["proposed", "construction", "raceway", "bus_guideway", "escape"],
 
-  // Tiles per class. `surface` is the carriageway, `kerb` the edging,
-  // `sidewalk` the pavement, `verge` the strip beyond it.
-  //
-  // `kerbDiag` is what makes an angled street read as angled rather than as a
-  // staircase: where the stairstep runs 1:1, the diagonal kerb artwork is laid
-  // instead of the square one. Vanilla uses these in about one in six of the
-  // Muldraugh cells that have kerbs at all.
-  "tiles": {
-    "motorway": {
-      "surface": ["blends_street_01_86"],
-      "kerb": ["street_curbs_01_9", "street_curbs_01_11"],
-      "kerbDiag": ["street_curbs_01_diag_0", "street_curbs_01_diag_1"],
-      "marking": ["street_trafficlines_01_4", "street_trafficlines_01_16"],
-      "sidewalk": ["floors_exterior_tilesandstone_01_3"],
-      "verge": []
-    },
-    "trunk": {
-      "surface": ["blends_street_01_86"],
-      "kerb": ["street_curbs_01_9", "street_curbs_01_11"],
-      "kerbDiag": ["street_curbs_01_diag_0", "street_curbs_01_diag_1"],
-      "marking": ["street_trafficlines_01_4"],
-      "sidewalk": ["floors_exterior_tilesandstone_01_3"],
-      "verge": []
-    },
-    "primary": {
-      "surface": ["blends_street_01_86"],
-      "kerb": ["street_curbs_01_9", "street_curbs_01_11"],
-      "kerbDiag": ["street_curbs_01_diag_0", "street_curbs_01_diag_1"],
-      "marking": ["street_trafficlines_01_4"],
-      "sidewalk": ["floors_exterior_tilesandstone_01_3"],
-      "verge": []
-    },
-    "secondary": {
-      "surface": ["blends_street_01_86"],
-      "kerb": ["street_curbs_01_9", "street_curbs_01_11"],
-      "kerbDiag": ["street_curbs_01_diag_0", "street_curbs_01_diag_1"],
-      "marking": [],
-      "sidewalk": ["floors_exterior_tilesandstone_01_3"],
-      "verge": []
-    },
-    "residential": {
-      "surface": ["blends_street_01_86"],
-      "kerb": ["street_curbs_01_9", "street_curbs_01_11"],
-      "kerbDiag": ["street_curbs_01_diag_0", "street_curbs_01_diag_1"],
-      "marking": [],
-      "sidewalk": ["floors_exterior_tilesandstone_01_3"],
-      "verge": []
-    },
-    "service": {
-      "surface": ["blends_street_01_86"],
-      "kerb": [],
-      "kerbDiag": [],
-      "marking": [],
-      "sidewalk": [],
-      "verge": []
-    },
-    "track": {
-      "surface": ["blends_natural_01_64"],
-      "kerb": [],
-      "kerbDiag": [],
-      "marking": [],
-      "sidewalk": [],
-      "verge": []
-    },
-    "footway": {
-      "surface": ["floors_exterior_tilesandstone_01_3"],
-      "kerb": [],
-      "kerbDiag": [],
-      "marking": [],
-      "sidewalk": [],
-      "verge": []
-    },
-    "cycleway": {
-      "surface": ["blends_street_01_86"],
-      "kerb": [],
-      "kerbDiag": [],
-      "marking": [],
-      "sidewalk": [],
-      "verge": []
-    }
-  },
+  // Tile families, variants, layers, exclusions and fallbacks are centralized in
+  // config/semantic-mappings.jsonc. This profile owns geometry only.
 
   // A stairstep run is called diagonal when its step ratio is within this much
   // of 1:1. Outside that band the square kerb artwork is used, because the

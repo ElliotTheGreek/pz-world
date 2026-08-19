@@ -21,8 +21,21 @@
 import { Projection, bboxAround } from '../geo/project.js';
 import { dominantBearing, gridAlignment } from '../geo/orient.js';
 import { TileCanvas } from './grid.js';
-import { classifyRoad, paintRoad, loadRoadProfile } from './roads.js';
-import { placeBuildings, Library } from './buildings.js';
+import {
+  buildIntersectionTopology,
+  classifyRoad,
+  createCurbPlan,
+  finalizeCurbs,
+  finalizeSidewalks,
+  isBridgeRoad,
+  loadRoadProfile,
+  markCurbOpening,
+  paintRoad,
+  renderIntersections,
+  renderJunctionMarkings,
+} from './roads.js';
+import { enrichBuildingsWithPois, placeBuildings, Library } from './buildings.js';
+import { planRoadsideFeatures, renderRoadsideFeatures } from './roadside.js';
 import { paintGround, builtUpMask } from './zones.js';
 
 /**
@@ -76,10 +89,17 @@ export function buildPlan(features, opts) {
 
   const toSquares = (pts) => pts.map(([lon, lat]) => proj.toTile(lon, lat));
   const keep = (pts) => intersectsBounds(pts, bounds);
+  const projectedBuildings = features.buildings
+    .map((building) => ({ ...building, points: toSquares(building.points) }))
+    .filter((building) => keep(building.points));
+  const projectedPois = (features.pois ?? [])
+    .map((poi) => ({ ...poi, points: toSquares(poi.points) }))
+    .filter((poi) => keep(poi.points));
+  const enriched = enrichBuildingsWithPois(projectedBuildings, projectedPois);
+  const claimedPoiIds = new Set(enriched.buildings.flatMap((building) => building.poiFids ?? []));
+
   const projected = {
-    buildings: features.buildings
-      .map((b) => ({ ...b, points: toSquares(b.points) }))
-      .filter((b) => keep(b.points)),
+    buildings: enriched.buildings,
     // A road is clipped rather than dropped: an interstate crossing the map
     // should still be drawn across it, just not for the other forty miles.
     roads: features.roads
@@ -87,6 +107,13 @@ export function buildPlan(features, opts) {
     ground: features.ground
       .map((g) => ({ ...g, points: toSquares(g.points) }))
       .filter((g) => keep(g.points)),
+    objects: (features.objects ?? [])
+      .map((object) => ({ ...object, points: toSquares(object.points) }))
+      .filter((object) => keep(object.points)),
+    pois: projectedPois.map((poi) => ({
+      ...poi,
+      claimedByBuilding: claimedPoiIds.has(poi.fid),
+    })),
   };
 
   const dropped = {
@@ -132,16 +159,68 @@ export function buildPlan(features, opts) {
     x >= bounds.minX && x <= bounds.maxX && y >= bounds.minY && y <= bounds.maxY;
   let roadSquares = 0;
   let roadCount = 0;
-  for (const road of projected.roads) {
+  const curbPlan = createCurbPlan();
+  for (const placement of placements) {
+    for (let y = placement.y; y < placement.y + placement.h; y++) {
+      for (let x = placement.x; x < placement.x + placement.w; x++) {
+        curbPlan.buildingFootprint.add(`${x},${y}`);
+      }
+    }
+  }
+  const renderableRoads = [];
+  const orderedRoads = [...projected.roads].sort((a, b) => Number(isBridgeRoad(a)) - Number(isBridgeRoad(b)));
+  for (const road of orderedRoads) {
     const spec = classifyRoad(road, profile);
     if (!spec) continue;
-    roadSquares += paintRoad(canvas, road, spec, { builtUp, inWorld }, profile);
+    roadSquares += paintRoad(canvas, road, spec, { builtUp, inWorld, curbPlan }, profile);
+    renderableRoads.push({ ...road, spec });
     roadCount++;
   }
-  log(`painted ${roadCount} roads over ${canvas.size} squares (${roadSquares} tile writes)`);
+  const intersections = buildIntersectionTopology(renderableRoads, profile);
+  roadSquares += renderIntersections(canvas, intersections, curbPlan, { inWorld, builtUp });
+
+  // Point features are independent OSM elements, so apply their curb cuts only
+  // after every carriageway has contributed to the shared topology mask.
+  for (const object of projected.objects) {
+    const [point] = object.points ?? [];
+    if (!point) continue;
+    // Point crossings are located on the centreline; the cut must reach across
+    // the carriageway, curb, and sidewalk rather than only clearing asphalt.
+    if (object.kind === 'crossing') markCurbOpening(curbPlan, point[0], point[1], 8, 'crossing');
+    if (object.kind === 'junction') markCurbOpening(curbPlan, point[0], point[1], 3, 'junction');
+    if (object.kind === 'barrier' && ['entrance', 'gate'].includes(object.tags?.barrier)) {
+      markCurbOpening(curbPlan, point[0], point[1], 1, 'entrance');
+    }
+  }
+  roadSquares += finalizeSidewalks(canvas, curbPlan);
+  roadSquares += finalizeCurbs(canvas, curbPlan);
+  // Stop bars go on after the curbs and pavements they must not sit under.
+  roadSquares += renderJunctionMarkings(canvas, curbPlan);
+  const roadside = planRoadsideFeatures({
+    objects: projected.objects,
+    roads: renderableRoads,
+    intersections,
+    curbPlan,
+    inWorld,
+  });
+  roadSquares += renderRoadsideFeatures(canvas, roadside);
+  log(
+    `painted ${roadCount} roads over ${canvas.size} squares (${roadSquares} tile writes), ` +
+      `${roadside.stats.total} roadside signs/furniture (${roadside.stats.inferred} inferred)`,
+  );
 
   // ---- 5. Ground --------------------------------------------------------
   const ground = paintGround(projected, canvas, placements, { bounds, log });
+
+  const intersectionPlans = curbPlan.intersections.map(({ arms, ring, ...intersection }) => ({
+    ...intersection,
+    arms: arms.map(({ road, ...arm }) => arm),
+    ring: ring ? (({ road, ...value }) => value)(ring) : undefined,
+  }));
+  const topologyCounts = {};
+  for (const intersection of intersectionPlans) {
+    topologyCounts[intersection.topology] = (topologyCounts[intersection.topology] ?? 0) + 1;
+  }
 
   const residuals = buildingStats.residuals;
   return {
@@ -162,9 +241,24 @@ export function buildPlan(features, opts) {
     placements,
     roads: canvas,
     ground,
+    intersections: intersectionPlans,
+    roadside: roadside.placements,
+    sourceFeatures: {
+      buildings: projected.buildings,
+      roads: projected.roads,
+      ground: projected.ground,
+      objects: projected.objects,
+      pois: projected.pois,
+    },
     stats: {
       buildings: buildingStats,
-      roads: { ways: roadCount, squares: canvas.size },
+      roads: {
+        ways: roadCount,
+        squares: canvas.size,
+        intersections: intersectionPlans.length,
+        topologies: topologyCounts,
+        roadside: roadside.stats,
+      },
       residual: {
         median: residuals.length ? residuals[residuals.length >> 1] : 0,
         p90: residuals.length ? residuals[Math.floor(residuals.length * 0.9)] : 0,

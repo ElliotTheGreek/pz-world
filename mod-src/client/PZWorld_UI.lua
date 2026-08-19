@@ -4,12 +4,15 @@
     This is the front of the mod: you start a new game, it asks where on Earth
     you want to be, and then builds that place in front of you.
 
-    It does not do the building. `worldgen` lives in the server Lua state, so
-    the panel writes a build order, the server-side driver in
-    server/PZWorld_Server.lua does the work, and progress comes back through a
-    file that this polls every frame. Getting that wrong is what made the first
-    build produce an empty forest: the client filled a `worldgen` table of its
-    own and the real generator never saw it.
+    It does not do the building, and neither does anything else in Lua. The
+    panel writes **one** build order; the helper sees it and runs
+    `tools/build-world.js`, which is the only world generator there is; the
+    build screen watches the progress file it writes.
+
+    It used to write two orders — a data request that drove a Lua
+    reimplementation of the generator, and a build order that the helper *and* a
+    server-side Lua driver both acted on. One click, three world generators,
+    writing over each other's output. The Lua ones are deleted.
 ]]
 
 require "ISUI/ISPanelJoypad"
@@ -155,17 +158,15 @@ function PZWorldUI:onBuild()
     }
 
     Bridge.saveSettings(params)
-    Bridge.clearData()
 
-    -- Ask the helper for the data, then hand straight to the build screen. It
-    -- blocks everything and reports every stage, including the wait for the
-    -- download, so there is never a moment where the mod is working silently.
-    local ok, err = Bridge.writeRequest(params)
-    if not ok then
-        self.errorText = err or "could not write the request"
+    -- Clear the progress file before ordering, not after: the screen polls it
+    -- immediately, and a stale `done 1` from the last build would make this one
+    -- look finished the moment it opened.
+    Bridge.writeProgress({ progress = 0, message = "Starting", done = false })
+    if not Bridge.writeBuildOrder(params) then
+        self.errorText = "could not write the build order. Is the helper running?"
         return
     end
-    Bridge.writeProgress({ progress = 0, message = "Starting", done = false })
 
     -- The banner is opened from an explicit build order and never from a poll:
     -- polling would resurrect it on the next launch from a stale progress file,

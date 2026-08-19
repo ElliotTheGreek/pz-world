@@ -1,0 +1,36 @@
+{
+  "gameVersion": "42.x.x",
+  "runAt": "YYYY-MM-DDTHH:mm:ssZ",
+  "observer": "name or handle",
+  "route": "Describe spawn, route, cell boundaries, and finish point",
+  "checks": {
+    "urbanJunction": {
+      "passed": false,
+      "notes": "Check crossings, stop bars, curb ownership, blank tiles, and collision obstruction."
+    },
+    "diagonalCurb": {
+      "passed": false,
+      "notes": "Check facing, six-piece continuity, sidewalk cut, and traversable opening."
+    },
+    "highwayRamp": {
+      "passed": false,
+      "notes": "Check surface and marking continuity, shoulders, no urban curb, and streaming."
+    },
+    "ruralRoad": {
+      "passed": false,
+      "notes": "Check soft edges/ditch, unpaved surface where expected, and no invented sidewalk."
+    },
+    "bridgeApproach": {
+      "passed": false,
+      "notes": "Check deck/edge continuity, approach transition, ordinary-edge suppression, and collision."
+    },
+    "parkingAndEntrance": {
+      "passed": false,
+      "notes": "Check vehicle/building overlap, entrance access, and curb opening."
+    },
+    "nativeStability": {
+      "passed": false,
+      "notes": "Record duration, visible stalls, frame-pacing observations, crash status, and console errors."
+    }
+  }
+}
