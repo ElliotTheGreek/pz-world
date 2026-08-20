@@ -36,7 +36,7 @@ That runs three steps, and you only need it once:
 | step | what it does |
 |---|---|
 | `extract` | indexes ~9,100 buildings in **your own** Project Zomboid install |
-| `canvas` | builds the blank 16.4 km world the mod ships |
+| `canvas` | builds the blank 20.5 km world the mod ships |
 | `build` | assembles the mod, block-checks every Lua file, installs it |
 
 Then, whenever you want to play:
@@ -255,13 +255,13 @@ machine — and guessing without them cost days.
 node tools/classdump.js <file.class> [method]   # read the game's bytecode
 node tools/mapgroups.js pzworld                 # will PZ list my map? (offline)
 node tools/luacheck.js <file.lua>               # catch a missing `end`
-node tools/simulate.js                          # replay a build, offline
+node tools/audit-tile-usage.mjs                 # what art did the build actually use?
+node src/cli.js verify <mod dir>                # cells, tiles, biomes, in-game map
 ```
 
-`simulate.js` re-runs the geometry against the last payload the helper fetched
-and answers the questions that decide whether the world looks right — how many
-buildings overlapped, how many pavements crossed a road, whether any static
-module hides another's tiles — without launching the game.
+`audit-tile-usage` reads the emitted cells back off disk and counts every tile
+by family, which is how "the roads have no kerbs" stopped being an argument and
+became a number.
 
 ## Tests
 
@@ -290,6 +290,53 @@ lands somewhere real. See `mod-src/client/PZWorld_Compat.lua`.
 
 Change `CANVAS_CELLS` in `tools/make-canvas.js` and `Config.lua` together if you
 want a different size; an empty cell costs 19.6 kB, so the canvas is ~126 MB.
+
+## Giving it to someone else
+
+**Not the Steam Workshop, and not because nobody has tried.** Three things about
+this mod cannot go in a Workshop item:
+
+- **It needs a process outside the game.** Project Zomboid's Lua cannot open a
+  socket and cannot write a byte above 0x7F, and a map cell is binary — so the
+  fetching and the writing happen in `helper/`, which is Node. A Workshop item is
+  Lua and media; it cannot ship or start a program.
+- **The buildings are the player's own.** Interiors are read out of *their* copy
+  of Project Zomboid by `npm run extract`. That is what makes this shareable at
+  all, and it is also why there is nothing to upload: the interesting data does
+  not exist until it is built on their machine.
+- **The world is bigger than the limit.** A blank canvas is 126 MB and a built
+  city is around 470 MB.
+
+So it is shared as a repository, and what a new person needs is:
+
+1. **Node 22 or newer.** This is the real barrier — most Project Zomboid players
+   do not have it. https://nodejs.org, the LTS installer, next-next-finish.
+2. **Project Zomboid Build 42**, installed and run at least once.
+3. Then:
+
+```bash
+git clone https://github.com/ElliotTheGreek/pz-world
+cd pz-world
+npm run setup     # once: indexes their install, builds the canvas, installs the mod
+npm run helper    # leave running whenever they play
+```
+
+There are no npm dependencies to install and nothing to compile.
+
+### What must not be shared
+
+Two directories are gitignored for a reason, and the reason is not tidiness:
+
+- **`library/`** holds building data read out of a Project Zomboid install. It is
+  The Indie Stone's work. It must never be committed or sent to anyone; it is
+  rebuilt in a few minutes by `npm run extract` and is specific to a game version
+  anyway.
+- **A generated map directory** (`Zomboid/mods/pzworld/common/media/maps/PZWorld`
+  once a city is in it) contains those same building tiles. Sharing a *world*
+  means sharing them. Share the coordinates instead — the same latitude,
+  longitude, radius and seed rebuild the same city.
+
+What is safe to share is this repository, and the numbers: a place and a radius.
 
 ## Licensing
 

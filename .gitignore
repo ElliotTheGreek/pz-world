@@ -8,12 +8,10 @@ node_modules/
 #
 # `mod/` is the assembled mod, and every byte of it is produced:
 #
-#   mod/common/media/maps/PZWorld/   tools/make-canvas.js   (4,096 blank cells, 135 MB)
+#   mod/common/media/maps/PZWorld/   tools/make-canvas.js   (6,400 blank cells, 126 MB)
 #   mod/42/mod.info                  tools/make-canvas.js
-#   mod/42/media/lua/{client,shared,server}/
+#   mod/42/media/lua/{client,shared}/
 #                                    tools/build-mod.js, copied from mod-src/
-#   mod/42/media/lua/shared/PZWorld/Prototypes/
-#                                    tools/emit-prototypes.js (5.4 MB)
 #
 # The source of truth for the Lua is `mod-src/`, which *is* tracked. Rebuild the
 # rest with `npm run setup`.
@@ -42,6 +40,9 @@ library/
 npm-debug.log*
 tmp/
 *.tmp
+# One-off probe scripts written while chasing a measurement. Named so they are
+# obviously disposable and never mistaken for a tool worth keeping.
+.tmp-*
 
 # --------------------------------------------------------------- environment
 .vscode/
