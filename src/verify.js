@@ -196,10 +196,31 @@ export function verifyMod(dir, opts = {}) {
     }
   }
 
+  // ---- which world is this? ----------------------------------------------
+  //
+  // A map directory that cannot say what produced it is one nobody can
+  // reproduce or match against a friend's, which is the whole basis of playing
+  // it together. `pzworld.json` is written beside the cells by every build.
+  const manifestFile = path.join(mapDir, 'pzworld.json');
+  if (fs.existsSync(manifestFile)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+      stats.world = manifest;
+    } catch (err) {
+      problems.push(`pzworld.json will not read: ${err.message}`);
+    }
+  }
+
   log(
     `verified ${stats.cells} cells, ${stats.prefabs} prefabs (${stats.tiles} tile references), ` +
       `${stats.modules} placements`,
   );
+  if (stats.world) {
+    const w = stats.world;
+    log(`  world: ${w.name || 'unnamed'} — ${w.lat}, ${w.lon}, radius ${w.radius} m, seed ${w.seed}`);
+    log(`    built on Project Zomboid ${w.gameVersion ?? 'an unrecorded version'}`
+      + `, generator ${w.generator ?? '?'}`);
+  }
   if (stats.mapFeatures) log(`  in-game map: ${stats.mapFeatures} features in ${stats.mapCells} cells`);
   return { problems, stats };
 }

@@ -352,6 +352,71 @@ Two directories are gitignored for a reason, and the reason is not tidiness:
 
 What is safe to share is this repository, and the numbers: a place and a radius.
 
+## Multiplayer
+
+Project Zomboid does not stream map cells. Every client loads them off its own
+disk — which is why a map mod has to be installed by everybody — so a shared
+world needs **identical cells on every machine**.
+
+There are only two ways to get that, and one of them is bad: ship the built map,
+which is half a gigabyte per world and carries Indie Stone building layouts
+between people. The other is to have everyone build it themselves, which works
+here because the build is reproducible. The same coordinates and seed produce
+byte-identical files; there is a test that builds a town twice and compares every
+byte, and `test/recipe.test.js` fails if that ever stops being true.
+
+So a world is shared as a **recipe**: one file, a few hundred kilobytes, holding
+everything that decides a town.
+
+```bash
+# the host builds, and exports what they built
+npm run world -- --lat 44.6995 --lon -73.4529 --radius 2500   --name "Plattsburgh, NY" --recipe plattsburgh.json
+
+# everyone else rebuilds the identical town from their own copy of the game
+npm run world -- --from-recipe plattsburgh.json
+```
+
+Measured on a 600 m town: the rebuild came out **151 of 151 files identical** to
+the original.
+
+A recipe pins three things, because coordinates alone are not enough:
+
+| | why it is in there |
+|---|---|
+| lat, lon, radius, seed | the obvious part, and on its own not sufficient |
+| the OpenStreetMap response | OSM changes daily — the same coordinates in March and in June are different towns. The response is embedded, gzipped, so a rebuild never goes to the network and never comes back with different streets. This is also the only part that is legally redistributable: OSM data is ODbL and the attribution travels inside the file. |
+| the Project Zomboid version | interiors are read from each player's own install, so a different game build puts different buildings on the same footprints. A mismatch is reported at the start of the rebuild rather than discovered later. |
+
+A recipe contains **nothing of The Indie Stone's** — no tiles, no interiors, no
+room layouts. That is what makes it safe to post publicly when a generated map
+directory is not.
+
+Every build also drops a `pzworld.json` beside its cells recording the same
+facts without the payload, so `npm run verify` can tell you which world is
+installed and two players can compare.
+
+### What the mod refuses to do
+
+Building rewrites 484 files. The builder now checks before it opens, and says
+why when it will not:
+
+- **Connected to a server** — the world belongs to the host. Ask them for the
+  recipe and build it at your own main menu.
+- **Hosting** — rebuilding would change the map underneath players who have
+  already joined.
+- **A game is running** — the cells are open (on Windows, rewriting an open file
+  fails outright), and `IsoChunk.LoadOrCreate` prefers the save over the map, so
+  the ground you are standing on would not change anyway.
+
+F7 used to open the builder "from anywhere, at any time", which was all three of
+those waiting to happen.
+
+### What it costs
+
+Every player needs Node and has to run the helper — there is no version of this
+where only the host does. The trade is that nobody sends anybody half a
+gigabyte, and everyone's game builds its own buildings out of its own files.
+
 ## Licensing
 
 Map data from OpenStreetMap, © OpenStreetMap contributors, under the

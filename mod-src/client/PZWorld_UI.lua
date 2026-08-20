@@ -234,6 +234,26 @@ function PZWorldUI:new()
     return o
 end
 
+--[[
+    Say why the builder will not open, rather than doing nothing.
+
+    A key that silently does nothing is indistinguishable from a broken mod, and
+    the reasons it refuses — you are on a server, you are hosting, a game is
+    running — are all things the player can act on once they are told.
+]]
+function PZWorldUI.refuse(reason)
+    if PZWorldUI.instance then PZWorldUI.instance:removeFromUIManager() end
+    local w, h = 520, 180
+    local modal = ISModalDialog:new(
+        (getCore():getScreenWidth() - w) / 2, (getCore():getScreenHeight() - h) / 2, w, h,
+        "pz-world cannot build right now.\n\n" .. tostring(reason), false, nil, nil)
+    modal:initialise()
+    modal:instantiate()
+    modal:addToUIManager()
+    modal:setAlwaysOnTop(true)
+    return modal
+end
+
 function PZWorldUI.open()
     if PZWorldUI.instance then
         PZWorldUI.instance:removeFromUIManager()

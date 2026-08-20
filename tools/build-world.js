@@ -43,6 +43,13 @@ import {
   encodeWorldMapXml,
   assertXmlMatchesBin,
 } from '../src/formats/worldmap.js';
+import {
+  buildRecipe,
+  manifestOf,
+  readGameVersion,
+  readRecipe,
+  writeRecipe,
+} from '../src/emit/recipe.js';
 import { loadTileCatalogue } from '../src/formats/tiledefs.js';
 import { findInstall, findUserFolder } from '../src/lib/pzinstall.js';
 import { indexInstall } from '../src/extract/building.js';
@@ -57,6 +64,12 @@ import { MAP_NAME, MOD_ID, CANVAS_CELLS } from './make-canvas.js';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const LIBRARY = path.join(ROOT, 'library/buildings.json');
+
+/** Written beside a built world, naming everything that produced it. */
+export const MANIFEST = 'pzworld.json';
+
+/** Bumped when a change makes an old world's cells no longer reproducible. */
+export const GENERATOR_VERSION = '0.1.0';
 const ASSET_INVENTORY = path.join(ROOT, 'library/asset-inventory.json');
 
 function parseArgs(argv) {
@@ -143,11 +156,17 @@ export async function buildWorld(opts) {
 
   onProgress({ stage: 'fetching', progress: 0.05, message: 'Asking OpenStreetMap for the area' });
   const bbox = bboxAround(lat, lon, radiusM);
-  const raw = await fetchArea(bbox, {
+  // A recipe carries the exact Overpass response that built it, so a world
+  // rebuilt from one does not go to the network at all — and cannot come back
+  // with a different town because somebody edited a street last week.
+  let osmText = opts.osmText ?? null;
+  const raw = osmText ? JSON.parse(osmText) : await fetchArea(bbox, {
     cacheDir: path.join(ROOT, 'cache'),
     refresh: !!opts.refresh,
     log,
   });
+  if (osmText) log('using the map data embedded in the recipe');
+  else osmText = JSON.stringify(raw);
   const features = normalise(raw);
   log(`${features.buildings.length} buildings, ${features.roads.length} roads, ${features.ground.length} land-cover areas`);
 
@@ -218,6 +237,29 @@ export async function buildWorld(opts) {
 
   writeSpawnPoints(mapDir, result);
   writeAttribution(mapDir, { lat, lon, radiusM, name: opts.name });
+
+  // ---- what made this world ----------------------------------------------
+  //
+  // Written beside the cells every time, because a map directory that cannot say
+  // what produced it is a map nobody can reproduce or match. `--recipe` writes
+  // the shareable form, which is the same thing plus the OSM response.
+  const recipe = buildRecipe({
+    lat, lon, radius: radiusM, seed: opts.seed ?? `${lat},${lon}`,
+    name: opts.name ?? '',
+    gameVersion: readGameVersion(findUserFolder()),
+    generator: GENERATOR_VERSION,
+    osm: osmText,
+  });
+  fs.writeFileSync(
+    path.join(mapDir, MANIFEST),
+    `${JSON.stringify(manifestOf(recipe), null, 2)}\n`,
+    'utf8',
+  );
+  if (opts.recipe) {
+    const size = writeRecipe(String(opts.recipe), recipe);
+    log(`  recipe: ${opts.recipe} (${(size / 1e6).toFixed(2)} MB) — send this and anyone`);
+    log('    builds the identical town from their own copy of the game');
+  }
 
   log('');
   log(`${result.stats.cells} cells written, ${(result.stats.bytes / 1e6).toFixed(0)} MB`);
@@ -386,6 +428,30 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const progressFile = args.progress ? String(args.progress) : null;
   if (progressFile) {
     args.onProgress = (p) => writeProgressFile(progressFile, p);
+  }
+  // `--from-recipe <file>` rebuilds somebody else's world exactly: their
+  // coordinates, their seed, and the OpenStreetMap data as it stood when they
+  // built it. Anything given on the command line as well is ignored rather than
+  // merged — a recipe half-overridden is a world that matches nobody's.
+  if (args['from-recipe']) {
+    const { recipe, osm } = readRecipe(String(args['from-recipe']));
+    if (!osm) throw new Error('that recipe carries no map data, so it cannot be rebuilt offline');
+    const mine = readGameVersion(findUserFolder());
+    if (recipe.gameVersion && mine && recipe.gameVersion !== mine) {
+      process.stdout.write(
+        `WARNING: this recipe was built on Project Zomboid ${recipe.gameVersion} and you are on ${mine}.\n`
+        + '  Roads and ground will match; building interiors come from your own install and may not.\n',
+      );
+    }
+    args.lat = recipe.lat;
+    args.lon = recipe.lon;
+    args.radius = recipe.radius;
+    args.seed = recipe.seed;
+    args.name = recipe.name || args.name;
+    args.osmText = osm;
+    process.stdout.write(
+      `rebuilding "${recipe.name || 'a world'}" from ${path.basename(String(args['from-recipe']))}\n`,
+    );
   }
   buildWorld(args)
     .then((result) => {

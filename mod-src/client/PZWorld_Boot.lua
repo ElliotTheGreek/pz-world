@@ -16,8 +16,10 @@
     player has picked a group and pressed on. So the panel is hooked there and
     opens only when the group they picked contains our map directory.
 
-    F7 still opens it from anywhere, which is what to use for a second world, or
+    F7 opens it from the main menu, which is what to use for a second world, or
     if the world-select screen never appears because no other map is installed.
+    It used to open "from anywhere, at any time", and that was a loaded gun —
+    see `buildingIsSafe` below.
 
     Everything is pcall-wrapped. A mod that throws here takes the main menu with
     it and the player has no way back.
@@ -36,8 +38,68 @@ local function safe(label, fn)
     if not ok then print("PZWORLD: error in " .. label .. ": " .. tostring(err)) end
 end
 
+--[[
+    Whether it is safe to build right now, and why it usually is not.
+
+    A build rewrites the map cells on disk — 484 files, half a gigabyte. That is
+    only safe at the main menu, before the game has opened a single one of them:
+
+      * **In a running game**, `IsoLot.pool` holds file handles on every cell the
+        player has walked through, and on Windows rewriting an open file fails
+        outright. What the player is standing in also would not change, because
+        `IsoChunk.LoadOrCreate` prefers the save over the map.
+
+      * **Connected to a server**, the world is not ours to rebuild at all.
+        Project Zomboid does not stream map cells: every client loads them from
+        its own disk, so a client that rebuilt its map would simply disagree
+        with everyone else about where the buildings are.
+
+      * **Hosting**, the same file-handle problem applies, and every player who
+        has already joined has the old cells.
+
+    Returns `true, nil` when building is safe, or `false, reason` with something
+    the player can act on.
+]]
+local function buildingIsSafe()
+    -- Guarded individually: these are Java globals reached through Kahlua and a
+    -- function that is not exposed in some build reads as a nil index, which
+    -- would throw out of the key handler rather than answer the question.
+    local client = false
+    pcall(function() client = isClient and isClient() == true end)
+    if client then
+        return false, "You are connected to a server. The world belongs to the host — \n"
+            .. "ask them for the coordinates and seed and build the same world at the main menu."
+    end
+
+    local server = false
+    pcall(function() server = (isServer and isServer() == true) or (isCoopHost and isCoopHost() == true) end)
+    if server then
+        return false, "You are hosting. Rebuilding now would change the map underneath \n"
+            .. "players who already joined. Quit to the main menu first."
+    end
+
+    local inGame = false
+    pcall(function() inGame = getPlayer and getPlayer() ~= nil end)
+    if inGame then
+        return false, "A game is running. The map files are open, and a rebuild would \n"
+            .. "not change the ground you are standing on. Quit to the main menu first."
+    end
+
+    return true, nil
+end
+
+PZWorld.buildingIsSafe = buildingIsSafe
+
 local function openOnce()
     if shown then return end
+    local ok, why = buildingIsSafe()
+    if not ok then
+        print("PZWORLD: not opening the builder — " .. tostring(why):gsub("\n", " "))
+        safe("refuse", function()
+            if PZWorldUI and PZWorldUI.refuse then PZWorldUI.refuse(why) end
+        end)
+        return
+    end
     shown = true
     safe("open", function() PZWorldUI.open() end)
 end
@@ -81,7 +143,7 @@ safe("worldSelectHook", function()
     end
 end)
 
---- F7 opens the builder from anywhere, at any time.
+--- F7 opens the builder at the main menu. `openOnce` refuses elsewhere.
 safe("keybind", function()
     Events.OnCustomUIKey.Add(function(key)
         if key == Keyboard.KEY_F7 then

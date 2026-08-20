@@ -51,7 +51,73 @@ export function stripLua(src) {
   return out;
 }
 
+/**
+ * A quoted string that runs off the end of its line.
+ *
+ * Lua rejects a raw newline inside a `"..."` or `'...'` — the line has to end
+ * with a backslash to continue. `stripLua` happily consumes across the break
+ * looking for the closing quote, and `checkBlocks` only counts keywords, so a
+ * broken string used to pass every check here and fail at load in the game,
+ * where the only symptom is the mod silently not existing.
+ *
+ * This is exactly how three refusal messages nearly shipped: `
+` written into
+ * the source as a real line break rather than as an escape.
+ *
+ * @returns {{line: number, text: string}|null}
+ */
+export function findUnterminatedString(src) {
+  let i = 0;
+  let line = 1;
+  while (i < src.length) {
+    const long = /^(--)?\[(=*)\[/.exec(src.slice(i));
+    if (long) {
+      const close = `]${long[2]}]`;
+      const end = src.indexOf(close, i + long[0].length);
+      const chunk = src.slice(i, end < 0 ? src.length : end + close.length);
+      line += (chunk.match(/\n/g) ?? []).length;
+      i = end < 0 ? src.length : end + close.length;
+      continue;
+    }
+    if (src.startsWith('--', i)) {
+      const nl = src.indexOf('\n', i);
+      i = nl < 0 ? src.length : nl;
+      continue;
+    }
+    const q = src[i];
+    if (q === '"' || q === "'") {
+      const startLine = line;
+      const from = i;
+      i++;
+      while (i < src.length && src[i] !== q) {
+        if (src[i] === '\\') { i += 2; continue; }
+        if (src[i] === '\n') {
+          return { line: startLine, text: src.slice(from, i).slice(0, 60) };
+        }
+        i++;
+      }
+      i++;
+      continue;
+    }
+    if (src[i] === '\n') line++;
+    i++;
+  }
+  return null;
+}
+
 export function checkBlocks(src) {
+  // Strings first: an unterminated one makes everything after it nonsense, and
+  // it is the failure the block count cannot see.
+  const torn = findUnterminatedString(src);
+  if (torn) {
+    return {
+      ok: false,
+      reason: `unterminated string on line ${torn.line}: ${torn.text.trim()}`,
+      depth: 0,
+      opens: {},
+      ends: 0,
+    };
+  }
   const code = stripLua(src);
   const tokens = code.match(/\b[a-zA-Z_]\w*\b/g) ?? [];
   let depth = 0;

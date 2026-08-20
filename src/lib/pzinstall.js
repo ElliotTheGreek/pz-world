@@ -103,6 +103,13 @@ export function listVanillaMaps(install) {
   return fs
     .readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && d.name !== 'challengemaps')
+    // Sorted, because this order decides the order of the building index, and
+    // that index decides which real building lands on which footprint. Left to
+    // `readdirSync` the answer is whatever the filesystem happens to return —
+    // stable on one machine, not guaranteed to match another's. Two people
+    // building the same coordinates have to get the same town, or the map
+    // cannot be shared by sharing the numbers.
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
     .map((d) => path.join(dir, d.name));
 }
 
