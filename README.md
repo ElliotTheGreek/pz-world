@@ -1,12 +1,26 @@
 # pz-world
 
-Start a new game in **Project Zomboid Build 42**, type in coordinates, and watch
-the world build itself from the real place at those coordinates — roads on their
-real bearings, real building footprints, shops where the shops are and hospitals
-where the hospitals are.
+**Play Project Zomboid anywhere on Earth.** Start a new game, type in
+coordinates, and the world builds itself from the real place at those numbers —
+roads on their real bearings, real building footprints, shops where the shops
+are and hospitals where the hospitals are.
+
+![A residential street in Plattsburgh, New York, standing in Project Zomboid](docs/images/street-level.png)
+
+*Plattsburgh, New York — 44.6995, -73.4529. Every road, kerb, pavement, verge and
+house position comes from OpenStreetMap; the buildings themselves are real
+Project Zomboid interiors, read out of your own copy of the game.*
+
+Open the map and it is the actual town. Real street names, out of OpenStreetMap
+and into the game's own map screen, with buildings coloured by what they are:
+
+![The in-game map of Plattsburgh, with real street names](docs/images/world-map.png)
+
+*Bailey Avenue, Cornelia Street, Margaret Street, the Saranac River Trail, and
+Lake Champlain off to the east — because that is what is there.*
 
 One mod. Not tied to any city. Its own world, not a district bolted onto Knox
-County.
+County. Type different numbers and you get a different town.
 
 ```
 New Game → pz-world panel
